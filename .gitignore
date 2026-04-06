@@ -1,0 +1,20 @@
+# Source and translated books (copyrighted content)
+*.epub
+
+# Working directory (extracted epub contents)
+work/
+
+# Translation progress state
+progress.json
+
+# Python virtual environment
+.venv/
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
