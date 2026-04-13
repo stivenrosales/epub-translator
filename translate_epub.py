@@ -51,6 +51,7 @@ from claude_agent_sdk import (
 )
 from tenacity import retry, stop_after_attempt, wait_exponential
 from tqdm.asyncio import tqdm as atqdm
+from tqdm import tqdm
 
 # ─── Config global ──────────────────────────────────────────────────────────
 
@@ -1257,6 +1258,7 @@ async def translate_xhtml_file(
     sem: asyncio.Semaphore,
     progress: dict,
     profile: dict,
+    pbar: tqdm | None = None,
 ) -> None:
     key = str(path.relative_to(WORK_DIR))
     if progress.get(key) == "done":
@@ -1294,6 +1296,8 @@ async def translate_xhtml_file(
         except Exception as e:
             print(f"  [!] Error batch {i}-{i+len(batch)} en {path.name}: {e}")
             any_batch_failed = True
+            if pbar is not None:
+                pbar.update(1)
             continue
 
         for (tag, orig_html), trans in zip(batch, translations):
@@ -1326,6 +1330,10 @@ async def translate_xhtml_file(
 
         tail_items = translations[-3:]
         context_tail = "\n".join(tail_items)[-1500:]
+
+        if pbar is not None:
+            pbar.update(1)
+            pbar.set_postfix_str(path.name[:40], refresh=False)
 
     path.write_text(str(soup), encoding="utf-8")
     progress[key] = "partial" if any_batch_failed else "done"
@@ -1475,10 +1483,43 @@ async def main() -> None:
     progress = load_progress()
     sem = asyncio.Semaphore(CONCURRENCY)
 
-    # 1) Traducir XHTMLs
-    print(f"\nTraduciendo XHTMLs (concurrency={CONCURRENCY})...")
-    tasks = [translate_xhtml_file(p, sem, progress, profile) for p in xhtml_files]
-    await atqdm.gather(*tasks, desc="XHTML")
+    # 1) Pre-calcular total de batches para barra granular (solo archivos pendientes)
+    print("\nContando bloques pendientes para la barra de progreso...")
+    total_batches = 0
+    pending_files = 0
+    for p in xhtml_files:
+        key = str(p.relative_to(WORK_DIR))
+        if progress.get(key) == "done" or progress.get(key) == "skipped":
+            continue
+        if should_skip_file(p.name, profile["skip_patterns"]):
+            continue
+        try:
+            content = p.read_text(encoding="utf-8")
+            try:
+                s = BeautifulSoup(content, "lxml-xml")
+                if not s.find("body") and not s.find("html"):
+                    raise ValueError("parser vacío")
+            except Exception:
+                s = BeautifulSoup(content, "html.parser")
+            n_blocks = len(extract_translatable_blocks(s))
+            if n_blocks == 0:
+                continue
+            n_batches = (n_blocks + BATCH_SIZE - 1) // BATCH_SIZE
+            total_batches += n_batches
+            pending_files += 1
+        except Exception:
+            continue
+
+    print(f"Pendientes: {pending_files} archivos, ~{total_batches} batches (de {BATCH_SIZE} bloques c/u)")
+
+    # 2) Traducir XHTMLs con barra global por batches
+    print(f"\nTraduciendo (concurrency={CONCURRENCY})...")
+    pbar = tqdm(total=total_batches, desc="Batches", unit="batch", dynamic_ncols=True)
+    try:
+        tasks = [translate_xhtml_file(p, sem, progress, profile, pbar) for p in xhtml_files]
+        await asyncio.gather(*tasks)
+    finally:
+        pbar.close()
 
     # 2) toc.ncx (si existe)
     ncx_candidates = list(WORK_DIR.rglob("*.ncx"))
