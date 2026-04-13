@@ -42,6 +42,7 @@ from pathlib import Path
 from typing import Any
 
 from bs4 import BeautifulSoup, NavigableString
+from lxml import etree
 from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
@@ -58,10 +59,10 @@ WORK_DIR = PROJECT_DIR / "work"
 PROGRESS_FILE = PROJECT_DIR / "progress.json"
 
 MODEL = "claude-sonnet-4-6"   # Último Sonnet. Si da problemas: "claude-sonnet-4-5"
-BATCH_SIZE = 15
-CONCURRENCY = 2
+BATCH_SIZE = 25
+CONCURRENCY = 4
 
-# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", o None (auto-detect)
+# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", o None (auto-detect)
 FORCE_PROFILE: str | None = None
 
 # ─── Perfiles de libro ──────────────────────────────────────────────────────
@@ -396,6 +397,462 @@ SKIP_PATTERNS_GROKKING = [
     r"^index\.html$",     # Índice alfabético en inglés — no útil traducido
 ]
 
+# Perfil "superagency" — Reid Hoffman & Greg Beato (Authors Equity, 2025)
+# No-ficción sobre IA y sociedad: sin código, sin math, con terminología AI/tech
+GLOSSARY_SUPERAGENCY: dict[str, str] = {
+    # Términos clave del libro que SE MANTIENEN EN INGLÉS
+    "superagency": "superagency",
+    "AI": "IA",
+    "artificial intelligence": "inteligencia artificial",
+    "machine learning": "machine learning",
+    "deep learning": "deep learning",
+    "large language model": "large language model",
+    "large language models": "large language models",
+    "LLM": "LLM",
+    "LLMs": "LLMs",
+    "GPT": "GPT",
+    "ChatGPT": "ChatGPT",
+    "OpenAI": "OpenAI",
+    "AGI": "AGI",
+    "artificial general intelligence": "inteligencia artificial general",
+    "prompt": "prompt",
+    "prompts": "prompts",
+    "chatbot": "chatbot",
+    "chatbots": "chatbots",
+    "transformer": "transformer",
+    "neural network": "red neuronal",
+    "neural networks": "redes neuronales",
+    "foundation model": "foundation model",
+    "foundation models": "foundation models",
+    "fine-tuning": "fine-tuning",
+    "alignment": "alignment",
+    "guardrails": "guardrails",
+    "hallucination": "alucinación",
+    "hallucinations": "alucinaciones",
+    "bias": "sesgo",
+    "biases": "sesgos",
+    "dataset": "dataset",
+    "open source": "open source",
+    # Términos de tech/negocios
+    "startup": "startup",
+    "startups": "startups",
+    "Silicon Valley": "Silicon Valley",
+    "Big Tech": "Big Tech",
+    "venture capital": "capital de riesgo",
+    "scaling": "escalado",
+    "platform": "plataforma",
+    "platforms": "plataformas",
+    "network effects": "efectos de red",
+    "disruption": "disrupción",
+    "innovation": "innovación",
+    "deployment": "despliegue",
+    "iterative deployment": "despliegue iterativo",
+    # Conceptos centrales del libro
+    "agency": "agencia",
+    "human agency": "agencia humana",
+    "superagent": "superagente",
+    "co-pilot": "copiloto",
+    "copilot": "copiloto",
+    "existential risk": "riesgo existencial",
+    "safety": "seguridad",
+    "regulation": "regulación",
+    "governance": "gobernanza",
+    "accountability": "rendición de cuentas",
+    "transparency": "transparencia",
+    "automation": "automatización",
+    "augmentation": "aumento",
+    "workforce": "fuerza laboral",
+    # Personas y organizaciones — NO traducir
+    "Reid Hoffman": "Reid Hoffman",
+    "LinkedIn": "LinkedIn",
+    "Inflection AI": "Inflection AI",
+    "Greylock": "Greylock",
+    "Meta": "Meta",
+    "Google": "Google",
+    "Alphabet": "Alphabet",
+    "Microsoft": "Microsoft",
+    "Anthropic": "Anthropic",
+    "Claude": "Claude",
+}
+
+SYSTEM_PROMPT_SUPERAGENCY = """Eres un traductor literario profesional especializado en no-ficción de tecnología, negocios y política pública. Traduces del inglés al español latinoamericano neutro para un lector peruano interesado en inteligencia artificial y su impacto social.
+
+Este libro es "Superagency: What Could Possibly Go Right with Our AI Future" de Reid Hoffman y Greg Beato (2025). Es un ensayo argumentativo optimista sobre el futuro de la IA — reflexivo, persuasivo, con datos y anécdotas históricas. NO es técnico (sin código, sin math), pero usa terminología de AI/tech con precisión.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes.
+   - Preserva su posición EXACTA dentro del texto.
+
+2. PRESERVA TODOS los tags HTML exactamente: <em>, <strong>, <a href>, <span>, <sup>, <br/>, etc. Mismos atributos (href, id, class, data-*, epub:type), mismas cantidades, mismo orden.
+
+3. NOTAS AL PIE: los <sup><a href="..."> son links a notas al pie. Preserva EXACTAMENTE la estructura <sup><a href="..."><span class="blue">N</span></a></sup>. No los traduzcas, no los muevas.
+
+4. TERMINOLOGÍA AI/TECH — respeta SIEMPRE el glosario proporcionado:
+   - Términos que se mantienen en inglés: machine learning, deep learning, LLM, GPT, ChatGPT, foundation model, fine-tuning, alignment, guardrails, prompt, dataset, open source, startup, Big Tech, Silicon Valley.
+   - Términos que se traducen: AI → IA, hallucination → alucinación, bias → sesgo, agency → agencia, safety → seguridad, deployment → despliegue.
+   - Nombres propios NUNCA se traducen: Reid Hoffman, LinkedIn, OpenAI, Meta, Google, Anthropic, Claude, etc.
+
+5. ESPAÑOL LATAM NEUTRO, lector peruano:
+   - "tú" como segunda persona (no "vos", no "vosotros", no "usted" salvo registro formal original).
+   - Sin modismos regionales ("chido", "guay", "chévere", "bacán" — NINGUNO).
+   - Sin conjugaciones peninsulares.
+   - Registro: ensayístico, claro, profesional pero accesible.
+
+6. TONO de los autores (Hoffman & Beato) — CRÍTICO:
+   - Argumentativo, persuasivo, optimista pero fundamentado.
+   - Prosa elegante: frases variadas, ritmo fluido, párrafos sustanciales.
+   - Usan analogías históricas, datos, citas. Preserva el tono reflexivo y la cadencia.
+   - NO simplifiques oraciones complejas. NO rompas párrafos. Preserva la sofisticación del original.
+   - Preserva las referencias culturales (Taylor Swift, Ticketmaster, FTX, etc.) sin localizar.
+
+7. TÍTULOS DE OBRAS: libros, películas, artículos entre <span class="ital"> se mantienen en su idioma original. NO los traduzcas.
+
+8. URLs y links: preserva EXACTAMENTE como están, sin modificar.
+
+9. NO expliques, NO resumas, NO agregues notas del traductor.
+
+10. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_SUPERAGENCY = [
+    r"Superagency_Cover\.xhtml$",
+    r"Superagency_Titlepage\.xhtml$",
+    r"Superagency_Copyright\.xhtml$",
+    r"Superagency_Alsoby\.xhtml$",
+    r"Superagency_Index\.xhtml$",       # Índice alfabético — no útil traducido
+]
+
+# Perfil "practical_sql" — Anthony DeBarros / No Starch Press (Practical SQL, 2nd Ed., 2022)
+# Libro técnico de SQL/PostgreSQL con enfoque data journalism, datasets reales (Censo, taxis NYC, USGS)
+GLOSSARY_PRACTICAL_SQL: dict[str, str] = {
+    # ─── SQL keywords y comandos: SIEMPRE en inglés (mayúsculas) ───
+    "SELECT": "SELECT",
+    "FROM": "FROM",
+    "WHERE": "WHERE",
+    "GROUP BY": "GROUP BY",
+    "ORDER BY": "ORDER BY",
+    "HAVING": "HAVING",
+    "LIMIT": "LIMIT",
+    "OFFSET": "OFFSET",
+    "DISTINCT": "DISTINCT",
+    "JOIN": "JOIN",
+    "INNER JOIN": "INNER JOIN",
+    "LEFT JOIN": "LEFT JOIN",
+    "RIGHT JOIN": "RIGHT JOIN",
+    "FULL JOIN": "FULL JOIN",
+    "FULL OUTER JOIN": "FULL OUTER JOIN",
+    "CROSS JOIN": "CROSS JOIN",
+    "LATERAL": "LATERAL",
+    "USING": "USING",
+    "ON": "ON",
+    "UNION": "UNION",
+    "UNION ALL": "UNION ALL",
+    "INTERSECT": "INTERSECT",
+    "EXCEPT": "EXCEPT",
+    "INSERT": "INSERT",
+    "INSERT INTO": "INSERT INTO",
+    "UPDATE": "UPDATE",
+    "DELETE": "DELETE",
+    "TRUNCATE": "TRUNCATE",
+    "MERGE": "MERGE",
+    "RETURNING": "RETURNING",
+    "CREATE": "CREATE",
+    "CREATE TABLE": "CREATE TABLE",
+    "CREATE VIEW": "CREATE VIEW",
+    "CREATE INDEX": "CREATE INDEX",
+    "CREATE DATABASE": "CREATE DATABASE",
+    "CREATE SCHEMA": "CREATE SCHEMA",
+    "ALTER": "ALTER",
+    "ALTER TABLE": "ALTER TABLE",
+    "DROP": "DROP",
+    "DROP TABLE": "DROP TABLE",
+    "COPY": "COPY",
+    "WITH": "WITH",
+    "AS": "AS",
+    "CASE": "CASE",
+    "WHEN": "WHEN",
+    "THEN": "THEN",
+    "ELSE": "ELSE",
+    "END": "END",
+    "IS NULL": "IS NULL",
+    "IS NOT NULL": "IS NOT NULL",
+    "NULL": "NULL",
+    "NOT NULL": "NOT NULL",
+    "PRIMARY KEY": "PRIMARY KEY",
+    "FOREIGN KEY": "FOREIGN KEY",
+    "REFERENCES": "REFERENCES",
+    "CHECK": "CHECK",
+    "UNIQUE": "UNIQUE",
+    "DEFAULT": "DEFAULT",
+    "IDENTITY": "IDENTITY",
+    "SERIAL": "SERIAL",
+    "AUTO_INCREMENT": "AUTO_INCREMENT",
+    "EXPLAIN": "EXPLAIN",
+    "ANALYZE": "ANALYZE",
+    "VACUUM": "VACUUM",
+    "BEGIN": "BEGIN",
+    "COMMIT": "COMMIT",
+    "ROLLBACK": "ROLLBACK",
+    "TRANSACTION": "TRANSACTION",
+    "GRANT": "GRANT",
+    "REVOKE": "REVOKE",
+    # ─── Productos, herramientas y formatos: en inglés ───
+    "PostgreSQL": "PostgreSQL",
+    "Postgres": "Postgres",
+    "pgAdmin": "pgAdmin",
+    "psql": "psql",
+    "PostGIS": "PostGIS",
+    "MySQL": "MySQL",
+    "Oracle": "Oracle",
+    "SQLite": "SQLite",
+    "Microsoft SQL Server": "Microsoft SQL Server",
+    "SQL Server": "SQL Server",
+    "T-SQL": "T-SQL",
+    "BigQuery": "BigQuery",
+    "Snowflake": "Snowflake",
+    "Redshift": "Redshift",
+    "DuckDB": "DuckDB",
+    "ANSI SQL": "ANSI SQL",
+    "SQL standard": "estándar SQL",
+    "SQL": "SQL",
+    "JSON": "JSON",
+    "JSONB": "JSONB",
+    "CSV": "CSV",
+    "XML": "XML",
+    "ETL": "ETL",
+    "CTE": "CTE",
+    "ACID": "ACID",
+    "RDBMS": "RDBMS",
+    "ORM": "ORM",
+    "GIS": "GIS",
+    "GitHub": "GitHub",
+    "Python": "Python",
+    "JavaScript": "JavaScript",
+    # ─── Conceptos relacionales: SE TRADUCEN consistentemente ───
+    "database": "base de datos",
+    "databases": "bases de datos",
+    "relational database": "base de datos relacional",
+    "relational databases": "bases de datos relacionales",
+    "table": "tabla",
+    "tables": "tablas",
+    "row": "fila",
+    "rows": "filas",
+    "column": "columna",
+    "columns": "columnas",
+    "record": "registro",
+    "records": "registros",
+    "field": "campo",
+    "fields": "campos",
+    "view": "vista",
+    "views": "vistas",
+    "materialized view": "vista materializada",
+    "materialized views": "vistas materializadas",
+    "index": "índice",
+    "indexes": "índices",
+    "indices": "índices",
+    "schema": "esquema",
+    "schemas": "esquemas",
+    "primary key": "clave primaria",
+    "primary keys": "claves primarias",
+    "foreign key": "clave foránea",
+    "foreign keys": "claves foráneas",
+    "natural key": "clave natural",
+    "surrogate key": "clave subrogada",
+    "composite key": "clave compuesta",
+    "constraint": "restricción",
+    "constraints": "restricciones",
+    "data type": "tipo de dato",
+    "data types": "tipos de datos",
+    "data": "datos",
+    "dataset": "dataset",
+    "datasets": "datasets",
+    "query": "consulta",
+    "queries": "consultas",
+    "subquery": "subconsulta",
+    "subqueries": "subconsultas",
+    "statement": "sentencia",
+    "statements": "sentencias",
+    "expression": "expresión",
+    "expressions": "expresiones",
+    "clause": "cláusula",
+    "clauses": "cláusulas",
+    "operator": "operador",
+    "operators": "operadores",
+    "function": "función",
+    "functions": "funciones",
+    "aggregate function": "función de agregación",
+    "aggregate functions": "funciones de agregación",
+    "window function": "función de ventana",
+    "window functions": "funciones de ventana",
+    "stored procedure": "procedimiento almacenado",
+    "stored procedures": "procedimientos almacenados",
+    "trigger": "trigger",
+    "triggers": "triggers",
+    "transaction": "transacción",
+    "transactions": "transacciones",
+    "join": "join",
+    "joins": "joins",
+    "inner join": "inner join",
+    "left join": "left join",
+    "outer join": "outer join",
+    "self join": "self join",
+    "cross join": "cross join",
+    "set operation": "operación de conjuntos",
+    "set operations": "operaciones de conjuntos",
+    "result set": "conjunto de resultados",
+    "result sets": "conjuntos de resultados",
+    "execution plan": "plan de ejecución",
+    "query plan": "plan de consulta",
+    "query optimizer": "optimizador de consultas",
+    "query planner": "planificador de consultas",
+    "normalization": "normalización",
+    "denormalization": "desnormalización",
+    "cardinality": "cardinalidad",
+    "relation": "relación",
+    "relations": "relaciones",
+    # ─── Tipos de datos: nombre técnico en inglés, descripción en español ───
+    "string": "cadena",
+    "strings": "cadenas",
+    "integer": "entero",
+    "integers": "enteros",
+    "float": "float",
+    "decimal": "decimal",
+    "numeric": "numérico",
+    "boolean": "booleano",
+    "booleans": "booleanos",
+    "timestamp": "timestamp",
+    "timestamps": "timestamps",
+    "date": "fecha",
+    "dates": "fechas",
+    "interval": "interval",
+    "array": "arreglo",
+    "arrays": "arreglos",
+    # ─── Operaciones de análisis ───
+    "aggregate": "agregación",
+    "aggregation": "agregación",
+    "grouping": "agrupamiento",
+    "filter": "filtro",
+    "filters": "filtros",
+    "sort": "ordenar",
+    "sorting": "ordenamiento",
+    "import": "importar",
+    "export": "exportar",
+    "backup": "backup",
+    "restore": "restauración",
+    "dump": "dump",
+    # ─── Datos espaciales (Capítulo 15) ───
+    "spatial data": "datos espaciales",
+    "geographic information system": "sistema de información geográfica",
+    "geographic information systems": "sistemas de información geográfica",
+    "geometry": "geometría",
+    "geography": "geografía",
+    "spatial reference system": "sistema de referencia espacial",
+    "longitude": "longitud",
+    "latitude": "latitud",
+    "shapefile": "shapefile",
+    "shapefiles": "shapefiles",
+    # ─── Términos de análisis de datos / data journalism ───
+    "data analysis": "análisis de datos",
+    "data analyst": "analista de datos",
+    "data journalism": "periodismo de datos",
+    "data journalist": "periodista de datos",
+    "data wrangling": "manipulación de datos",
+    "data cleaning": "limpieza de datos",
+    "data quality": "calidad de los datos",
+    "exploratory data analysis": "análisis exploratorio de datos",
+    "rolling average": "promedio móvil",
+    "moving average": "media móvil",
+    "median": "mediana",
+    "mean": "media",
+    "average": "promedio",
+    "percentile": "percentil",
+    "percentiles": "percentiles",
+    "standard deviation": "desviación estándar",
+    "variance": "varianza",
+    "correlation": "correlación",
+    "regression": "regresión",
+    # ─── Conceptos generales que se mantienen ───
+    "True": "True",
+    "False": "False",
+    "true": "true",
+    "false": "false",
+    "open source": "open source",
+    "command line": "línea de comandos",
+    "command-line": "línea de comandos",
+}
+
+SYSTEM_PROMPT_PRACTICAL_SQL = """Sos un traductor técnico profesional especializado en bases de datos SQL, PostgreSQL y análisis de datos. Traducís del inglés al español latinoamericano neutro para un lector peruano que está aprendiendo SQL desde cero o con conocimientos básicos.
+
+Este libro es "Practical SQL, 2nd Edition" de Anthony DeBarros (No Starch Press, 2022). El autor es periodista de datos y analista. El enfoque del libro es PRÁCTICO: enseña SQL usando datasets reales del mundo (Censo de EEUU, taxis de Nueva York, terremotos del USGS) con la filosofía de "encontrar la historia en los datos". El motor usado es PostgreSQL con pgAdmin, y también cubre PostGIS para datos geoespaciales.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders de contenido técnico protegido: código SQL inline, nombres de tablas/columnas, comandos, rutas de archivos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes. NO agregues espacios dentro.
+   - Preservá su posición EXACTA dentro del texto. El espacio/puntuación alrededor puede ajustarse al español.
+
+2. PRESERVÁ TODOS los tags HTML exactamente: <em>, <strong>, <b>, <i>, <a href>, <span>, <code>, <var>, <sup>, <br/>, etc. No cambies atributos (href, id, class, epub:type), no agregues tags, no quites tags. Mismos atributos, mismas cantidades, mismo orden.
+
+3. NUNCA TRADUZCAS contenido dentro de <code>: son identificadores técnicos (keywords SQL, nombres de funciones, nombres de tablas, columnas, comandos del shell, rutas de archivos, parámetros). Preservalos EXACTAMENTE carácter por carácter. (Nota: la mayoría vendrán como tokens opacos, pero si ves algún <code> directo, aplicá la misma regla.) Lo mismo aplica a <var>, que marca placeholders dentro del código (ej: <var>table_name</var>).
+
+4. KEYWORDS SQL — JAMÁS se traducen. Mantenelos EXACTAMENTE en mayúsculas como están en el original:
+   SELECT, FROM, WHERE, GROUP BY, ORDER BY, HAVING, LIMIT, JOIN, INNER JOIN, LEFT JOIN, RIGHT JOIN, FULL OUTER JOIN, CROSS JOIN, LATERAL, USING, ON, UNION, UNION ALL, INTERSECT, EXCEPT, INSERT, UPDATE, DELETE, TRUNCATE, RETURNING, CREATE TABLE, ALTER, DROP, COPY, WITH, AS, CASE, WHEN, THEN, ELSE, END, NULL, NOT NULL, PRIMARY KEY, FOREIGN KEY, REFERENCES, CHECK, UNIQUE, DEFAULT, IDENTITY, EXPLAIN, ANALYZE, VACUUM, BEGIN, COMMIT, ROLLBACK, TRANSACTION, etc.
+   Esto vale TANTO dentro de <code> como cuando aparecen mencionados en prosa.
+
+5. PRODUCTOS Y HERRAMIENTAS — se mantienen en inglés:
+   PostgreSQL, Postgres, pgAdmin, psql, PostGIS, MySQL, Oracle, SQLite, Microsoft SQL Server, T-SQL, BigQuery, Snowflake, JSON, JSONB, CSV, XML, GitHub, Python.
+
+6. TERMINOLOGÍA RELACIONAL — SE TRADUCE consistentemente (respetar el glosario):
+   database → base de datos, table → tabla, row → fila, column → columna, record → registro, field → campo, view → vista, materialized view → vista materializada, index → índice, schema → esquema, primary key → clave primaria, foreign key → clave foránea, constraint → restricción, data type → tipo de dato, query → consulta, subquery → subconsulta, statement → sentencia, clause → cláusula, expression → expresión, function → función, aggregate function → función de agregación, window function → función de ventana, transaction → transacción, normalization → normalización, cardinality → cardinalidad.
+   Consistencia TOTAL a lo largo del libro. "query" SIEMPRE es "consulta", nunca "petición" ni "interrogación".
+
+7. CASO ESPECIAL: "join" / "joins" como sustantivo en prosa → "join" / "joins" (en minúsculas, en inglés). Es término de uso universal en la industria. PERO los keywords SQL en mayúsculas (INNER JOIN, LEFT JOIN, etc.) siempre quedan tal cual.
+
+8. ESPAÑOL LATAM NEUTRO, lector peruano principiante en SQL:
+   - "tú" como segunda persona (no "vos", no "vosotros", no "usted").
+   - Sin modismos regionales ("chévere", "bacán", "guay", "mola", "chido" — NINGUNO).
+   - Sin conjugaciones peninsulares (nada de "vosotros tenéis", "podéis", "haced", etc.).
+   - Registro: técnico pero accesible, como un mentor pragmático que te enseña a usar la herramienta.
+
+9. TONO del autor (DeBarros) — CRÍTICO:
+   - Conversacional, directo, didáctico. Escribe como periodista: claro, ordenado, sin adornos.
+   - Pragmático, orientado a "vamos a hacer esto en tu computadora". No académico, no abstracto.
+   - Respetá las indicaciones paso a paso ("Click here", "Enter this", "You should see...").
+   - Si dice "Let's start by..." traducí "Empecemos por...", no "Procedamos a iniciar mediante...".
+   - Frases cortas, párrafos cortos. No agregues palabras de relleno.
+
+10. NÚMEROS DE CAPÍTULO/FIGURA: "Chapter 5" → "Capítulo 5", "Figure 1-1" → "Figura 1-1", "Table 4-2" → "Tabla 4-2". Los IDs internos (id="figure1-1", href="#figure1-1") NO se tocan.
+
+11. NO expliques, NO resumas, NO agregues notas del traductor, NO expandas siglas que el autor dejó sin expandir.
+
+12. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_PRACTICAL_SQL = [
+    r"^cover\.xhtml$",
+    r"^f01\.xhtml$",      # Title page (solo subtítulo)
+    r"^f02\.xhtml$",      # Copyright
+    r"^b02\.xhtml$",      # Index alfabético en inglés — no útil traducido
+]
+
 PROFILES = {
     "generic": {
         "glossary": GLOSSARY_GENERIC,
@@ -411,6 +868,16 @@ PROFILES = {
         "glossary": GLOSSARY_GROKKING,
         "system_prompt": SYSTEM_PROMPT_GROKKING,
         "skip_patterns": SKIP_PATTERNS_GROKKING,
+    },
+    "superagency": {
+        "glossary": GLOSSARY_SUPERAGENCY,
+        "system_prompt": SYSTEM_PROMPT_SUPERAGENCY,
+        "skip_patterns": SKIP_PATTERNS_SUPERAGENCY,
+    },
+    "practical_sql": {
+        "glossary": GLOSSARY_PRACTICAL_SQL,
+        "system_prompt": SYSTEM_PROMPT_PRACTICAL_SQL,
+        "skip_patterns": SKIP_PATTERNS_PRACTICAL_SQL,
     },
 }
 
@@ -447,6 +914,9 @@ def detect_book_profile(epub_path: Path) -> str:
     manning_hits = 0       # Manning: class="programlisting" + fm-code-in-text
     math_hits = 0
     pre_hits = 0
+    superagency_hits = 0   # Authors Equity / Superagency: Superagency_Ch + CSS classes CN/CT/TXT
+    postgres_hits = 0      # Practical SQL: PostgreSQL/pgAdmin densidad alta
+    sql_keyword_hits = 0   # SELECT/FROM/JOIN/WHERE en <code> y <pre>
     with zipfile.ZipFile(epub_path) as zf:
         for name in zf.namelist():
             if not name.endswith((".xhtml", ".html", ".htm")):
@@ -460,6 +930,19 @@ def detect_book_profile(epub_path: Path) -> str:
             manning_hits += content.count('fm-code-in-text')
             math_hits += content.count("<math")
             pre_hits += content.count("<pre")
+            if "Superagency" in name or 'class="CN"' in content:
+                superagency_hits += 1
+            postgres_hits += content.count("PostgreSQL")
+            postgres_hits += content.count("pgAdmin")
+            sql_keyword_hits += content.count("SELECT ")
+            sql_keyword_hits += content.count("FROM ")
+            sql_keyword_hits += content.count("CREATE TABLE")
+    # Superagency — Authors Equity format with CN/CT/TXT classes
+    if superagency_hits >= 5:
+        return "superagency"
+    # Practical SQL — densidad alta de PostgreSQL + keywords SQL + sin marcadores O'Reilly/Manning
+    if postgres_hits >= 30 and sql_keyword_hits >= 50 and oreilly_hits == 0 and manning_hits == 0:
+        return "practical_sql"
     # Manning > O'Reilly → Grokking-style
     if manning_hits >= 5 and manning_hits > oreilly_hits:
         return "grokking_algorithms"
@@ -631,8 +1114,20 @@ def tag_signature(html: str) -> tuple:
     return (tags, hrefs, ids, code_texts, math_count, svg_count)
 
 
+def is_xml_wellformed(html: str) -> bool:
+    """Parsea el fragmento como XML estricto. Atrapa atributos rotos (E999 Kindle)."""
+    try:
+        wrapped = f'<root xmlns="http://www.w3.org/1999/xhtml">{html}</root>'
+        etree.fromstring(wrapped.encode("utf-8"))
+        return True
+    except etree.XMLSyntaxError:
+        return False
+
+
 def validate_translation(original: str, translated: str) -> bool:
     try:
+        if not is_xml_wellformed(translated):
+            return False
         return tag_signature(original) == tag_signature(translated)
     except Exception:
         return False
@@ -678,11 +1173,11 @@ def build_user_message(
     input_blocks = [f"<<<BLOCK {i}>>>\n{h}" for i, h in enumerate(batch_htmls)]
     input_payload = "\n".join(input_blocks) + "\n<<<END>>>"
 
-    return f"""Glosario obligatorio (respetá estas traducciones de forma consistente):
+    return f"""Glosario obligatorio (respeta estas traducciones de forma consistente):
 {glossary_lines}
 {ctx_block}
-Traducí los siguientes {len(batch_htmls)} bloques HTML al español neutro LATAM.
-Preservá tags inline, preservá tokens ⟦OPAQUE_N⟧ exactamente. Respondé con formato <<<BLOCK N>>> / <<<END>>>.
+Traduce los siguientes {len(batch_htmls)} bloques HTML al español neutro LATAM.
+Preserva tags inline, preserva tokens ⟦OPAQUE_N⟧ exactamente. Responde con formato <<<BLOCK N>>> / <<<END>>>.
 
 Bloques a traducir:
 {input_payload}"""
@@ -810,9 +1305,9 @@ async def translate_xhtml_file(
                     t_html, tokens = tokenize_opaque(orig_html)
                     retry_msg = (
                         "La traducción anterior alteró la estructura de tags o de tokens opacos. "
-                        "Retraducí este bloque preservando EXACTAMENTE todos los tags HTML, "
+                        "Retraduce este bloque preservando EXACTAMENTE todos los tags HTML, "
                         "todos los atributos, y todos los tokens ⟦OPAQUE_N⟧ en sus posiciones. "
-                        "Respondé con el formato delimitado:\n\n"
+                        "Responde con el formato delimitado:\n\n"
                         "<<<BLOCK 0>>>\n"
                         f"{t_html}\n"
                         "<<<END>>>"
@@ -876,6 +1371,47 @@ def update_opf(opf_path: Path) -> None:
     if lang:
         lang.string = "es-419"
     opf_path.write_text(str(soup), encoding="utf-8")
+
+
+# ─── Saneamiento para Kindle ────────────────────────────────────────────────
+
+_DISPLAY_NONE_RE = re.compile(r"display\s*:\s*none", re.IGNORECASE)
+_VISIBILITY_HIDDEN_RE = re.compile(r"visibility\s*:\s*hidden", re.IGNORECASE)
+
+
+def sanitize_for_kindle(work_dir: Path, opf_path: Path) -> None:
+    """Previene E999/E3013 de Send-to-Kindle:
+    - Neutraliza display:none y visibility:hidden en todos los CSS (límite de 10k chars ocultos).
+    - Sincroniza dtb:uid del NCX con dc:identifier del OPF.
+    """
+    # 1) CSS: display:none → display:block, visibility:hidden → visibility:visible
+    css_files = list(work_dir.rglob("*.css"))
+    touched = 0
+    for css in css_files:
+        text = css.read_text(encoding="utf-8")
+        new = _DISPLAY_NONE_RE.sub("display:block", text)
+        new = _VISIBILITY_HIDDEN_RE.sub("visibility:visible", new)
+        if new != text:
+            css.write_text(new, encoding="utf-8")
+            touched += 1
+    print(f"  CSS saneados ({touched}/{len(css_files)} con display:none/visibility:hidden)")
+
+    # 2) Sincronizar NCX uid con OPF identifier
+    opf_soup = BeautifulSoup(opf_path.read_text(encoding="utf-8"), "lxml-xml")
+    identifier_tag = opf_soup.find("dc:identifier") or opf_soup.find("identifier")
+    if not identifier_tag or not identifier_tag.get_text(strip=True):
+        return
+    opf_id = identifier_tag.get_text(strip=True)
+
+    for ncx in work_dir.rglob("*.ncx"):
+        ncx_text = ncx.read_text(encoding="utf-8")
+        ncx_soup = BeautifulSoup(ncx_text, "lxml-xml")
+        uid_meta = ncx_soup.find("meta", attrs={"name": "dtb:uid"})
+        if uid_meta and uid_meta.get("content") != opf_id:
+            old = uid_meta.get("content", "")
+            uid_meta["content"] = opf_id
+            ncx.write_text(str(ncx_soup), encoding="utf-8")
+            print(f"  NCX uid sincronizado: {old!r} → {opf_id!r}")
 
 
 # ─── Empaquetado ────────────────────────────────────────────────────────────
@@ -959,7 +1495,11 @@ async def main() -> None:
     print(f"\nActualizando {opf_path.name} (dc:language → es-419)...")
     update_opf(opf_path)
 
-    # 4) Reempaquetar
+    # 4) Saneamiento para Kindle (evita E999/E3013)
+    print("\nSaneando para Kindle...")
+    sanitize_for_kindle(WORK_DIR, opf_path)
+
+    # 5) Reempaquetar
     print(f"\nEmpaquetando {output_epub.name}...")
     repack_epub(WORK_DIR, output_epub)
 
