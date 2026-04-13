@@ -1,11 +1,17 @@
 # Source and translated books (copyrighted content)
 *.epub
+*.epub.bak
+*.azw3
+*.kpf
+*-conversionLog.csv
 
 # Working directory (extracted epub contents)
 work/
 
 # Translation progress state
 progress.json
+progress_*.json
+translate.log
 
 # Python virtual environment
 .venv/
