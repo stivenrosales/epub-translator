@@ -36,6 +36,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import zipfile
 from pathlib import Path
@@ -63,8 +64,8 @@ MODEL = "claude-sonnet-4-6"   # Último Sonnet. Si da problemas: "claude-sonnet-
 BATCH_SIZE = 25
 CONCURRENCY = 4
 
-# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", o None (auto-detect)
-FORCE_PROFILE: str | None = None
+# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", "bismarck", "slow_looking", o None (auto-detect)
+FORCE_PROFILE: str | None = "power_of_language"
 
 # ─── Perfiles de libro ──────────────────────────────────────────────────────
 
@@ -854,6 +855,1625 @@ SKIP_PATTERNS_PRACTICAL_SQL = [
     r"^b02\.xhtml$",      # Index alfabético en inglés — no útil traducido
 ]
 
+# Perfil "bismarck" — Jonathan Steinberg / Oxford University Press (Bismarck: A Life, 2011)
+# Biografía histórica académica. Prosa erudita, citas extensas en alemán, terminología
+# político-militar del siglo XIX prusiano/alemán.
+GLOSSARY_BISMARCK: dict[str, str] = {
+    # ─── Términos políticos/históricos alemanes: SE MANTIENEN EN ALEMÁN (cursiva si el original lo está) ───
+    "Realpolitik": "Realpolitik",
+    "Kulturkampf": "Kulturkampf",
+    "Ausgleich": "Ausgleich",
+    "Vormärz": "Vormärz",
+    "Zollverein": "Zollverein",
+    "Reich": "Reich",
+    "Kaiserreich": "Kaiserreich",
+    "Reichstag": "Reichstag",
+    "Bundesrat": "Bundesrat",
+    "Bundestag": "Bundestag",
+    "Landtag": "Landtag",
+    "Herrenhaus": "Herrenhaus",
+    "Abgeordnetenhaus": "Abgeordnetenhaus",
+    "Junker": "Junker",
+    "Junkers": "Junkers",
+    "Bürgertum": "Bürgertum",
+    "Mittelstand": "Mittelstand",
+    "Geheimrat": "Geheimrat",
+    "Staatsministerium": "Staatsministerium",
+    "Auswärtiges Amt": "Auswärtiges Amt",
+    "Wilhelmstrasse": "Wilhelmstrasse",
+    "Wilhelmstraße": "Wilhelmstraße",
+    "Schloss": "Schloss",
+    "Sonderweg": "Sonderweg",
+    "Weltpolitik": "Weltpolitik",
+    "Machtpolitik": "Machtpolitik",
+    "Gründerzeit": "Gründerzeit",
+    "Maiengesetze": "Maiengesetze",
+    "Sozialistengesetz": "Sozialistengesetz",
+    "Lebensraum": "Lebensraum",
+    "Heer": "Heer",
+    "Großdeutsch": "Großdeutsch",
+    "Kleindeutsch": "Kleindeutsch",
+    # ─── Cargos y títulos: traducidos al español ───
+    "Chancellor": "canciller",
+    "chancellor": "canciller",
+    "Imperial Chancellor": "canciller imperial",
+    "Reich Chancellor": "canciller del Reich",
+    "Minister-President": "ministro presidente",
+    "Minister President": "ministro presidente",
+    "Prime Minister": "primer ministro",
+    "Foreign Minister": "ministro de Asuntos Exteriores",
+    "Foreign Secretary": "ministro de Asuntos Exteriores",
+    "Minister of Foreign Affairs": "ministro de Asuntos Exteriores",
+    "Minister of War": "ministro de la Guerra",
+    "Minister of Finance": "ministro de Finanzas",
+    "Minister of the Interior": "ministro del Interior",
+    "Secretary of State": "secretario de Estado",
+    "ambassador": "embajador",
+    "envoy": "enviado",
+    "Kaiser": "káiser",
+    "Emperor": "emperador",
+    "Empress": "emperatriz",
+    "King": "rey",
+    "Queen": "reina",
+    "Crown Prince": "príncipe heredero",
+    "Crown Princess": "princesa heredera",
+    "Prince": "príncipe",
+    "Princess": "princesa",
+    "Archduke": "archiduque",
+    "Archduchess": "archiduquesa",
+    "Grand Duke": "gran duque",
+    "Grand Duchess": "gran duquesa",
+    "Duke": "duque",
+    "Duchess": "duquesa",
+    "Count": "conde",
+    "Countess": "condesa",
+    "Baron": "barón",
+    "Baroness": "baronesa",
+    "Tsar": "zar",
+    "Czar": "zar",
+    "Tsarina": "zarina",
+    "Pope": "papa",
+    "Cardinal": "cardenal",
+    "Field Marshal": "mariscal de campo",
+    "General": "general",
+    "Lieutenant General": "teniente general",
+    "Major General": "mayor general",
+    "Colonel": "coronel",
+    "Captain": "capitán",
+    # ─── Estados, regiones, ciudades alemanas y europeas ───
+    "Prussia": "Prusia",
+    "Prussian": "prusiano",
+    "Prussians": "prusianos",
+    "Bavaria": "Baviera",
+    "Bavarian": "bávaro",
+    "Saxony": "Sajonia",
+    "Saxon": "sajón",
+    "Württemberg": "Wurtemberg",
+    "Hesse": "Hesse",
+    "Hesse-Darmstadt": "Hesse-Darmstadt",
+    "Hesse-Kassel": "Hesse-Kassel",
+    "Baden": "Baden",
+    "Hanover": "Hannover",
+    "Holstein": "Holstein",
+    "Schleswig": "Schleswig",
+    "Schleswig-Holstein": "Schleswig-Holstein",
+    "Lauenburg": "Lauenburgo",
+    "Pomerania": "Pomerania",
+    "Pomeranian": "pomerano",
+    "Rhineland": "Renania",
+    "Westphalia": "Westfalia",
+    "Silesia": "Silesia",
+    "Brandenburg": "Brandeburgo",
+    "Mecklenburg": "Mecklemburgo",
+    "Thuringia": "Turingia",
+    "Alsace": "Alsacia",
+    "Lorraine": "Lorena",
+    "Alsace-Lorraine": "Alsacia-Lorena",
+    "Berlin": "Berlín",
+    "Vienna": "Viena",
+    "Frankfurt": "Fráncfort",
+    "Munich": "Múnich",
+    "Cologne": "Colonia",
+    "Hamburg": "Hamburgo",
+    "Bremen": "Bremen",
+    "Lübeck": "Lübeck",
+    "Königsberg": "Königsberg",
+    "Danzig": "Dánzig",
+    "Strasbourg": "Estrasburgo",
+    "Trieste": "Trieste",
+    "Sedan": "Sedán",
+    "Versailles": "Versalles",
+    "Bad Ems": "Bad Ems",
+    "Ems": "Ems",
+    "Carlsbad": "Carlsbad",
+    "Bohemia": "Bohemia",
+    "Moravia": "Moravia",
+    "Galicia": "Galitzia",
+    "Silesian": "silesio",
+    "Habsburg": "Habsburgo",
+    "Habsburgs": "Habsburgo",
+    "Hohenzollern": "Hohenzollern",
+    "Romanov": "Romanov",
+    "Wittelsbach": "Wittelsbach",
+    "House of Hohenzollern": "Casa de Hohenzollern",
+    "House of Habsburg": "Casa de Habsburgo",
+    "Austria": "Austria",
+    "Austrian": "austriaco",
+    "Austrians": "austriacos",
+    "Austria-Hungary": "Austria-Hungría",
+    "Austro-Hungarian": "austrohúngaro",
+    "Hungary": "Hungría",
+    "Hungarian": "húngaro",
+    "Russia": "Rusia",
+    "Russian": "ruso",
+    "France": "Francia",
+    "French": "francés",
+    "Britain": "Gran Bretaña",
+    "Great Britain": "Gran Bretaña",
+    "British": "británico",
+    "England": "Inglaterra",
+    "English": "inglés",
+    "Italy": "Italia",
+    "Italian": "italiano",
+    "Piedmont": "Piamonte",
+    "Sardinia": "Cerdeña",
+    "Spain": "España",
+    "Spanish": "español",
+    "Ottoman": "otomano",
+    "Ottoman Empire": "Imperio otomano",
+    "Balkans": "Balcanes",
+    "Balkan": "balcánico",
+    "Crimea": "Crimea",
+    "Bosnia": "Bosnia",
+    "Herzegovina": "Herzegovina",
+    "Serbia": "Serbia",
+    "Bulgaria": "Bulgaria",
+    "Romania": "Rumanía",
+    "Greece": "Grecia",
+    "Poland": "Polonia",
+    "Polish": "polaco",
+    "Denmark": "Dinamarca",
+    "Danish": "danés",
+    "Belgium": "Bélgica",
+    "Netherlands": "Países Bajos",
+    "Holland": "Holanda",
+    "Dutch": "neerlandés",
+    "Switzerland": "Suiza",
+    "Swiss": "suizo",
+    # ─── Entidades políticas y tratados ───
+    "Holy Roman Empire": "Sacro Imperio Romano Germánico",
+    "German Confederation": "Confederación Germánica",
+    "North German Confederation": "Confederación de Alemania del Norte",
+    "German Empire": "Imperio alemán",
+    "Second Reich": "Segundo Reich",
+    "First Reich": "Primer Reich",
+    "Diet": "Dieta",
+    "Frankfurt Diet": "Dieta de Fráncfort",
+    "Frankfurt Parliament": "Parlamento de Fráncfort",
+    "Frankfurt Assembly": "Asamblea de Fráncfort",
+    "Customs Union": "Unión Aduanera",
+    "Three Emperors' League": "Liga de los Tres Emperadores",
+    "League of Three Emperors": "Liga de los Tres Emperadores",
+    "Dreikaiserbund": "Dreikaiserbund",
+    "Dual Alliance": "Doble Alianza",
+    "Triple Alliance": "Triple Alianza",
+    "Reinsurance Treaty": "Tratado de Reaseguro",
+    "Treaty of Frankfurt": "Tratado de Fráncfort",
+    "Treaty of Berlin": "Tratado de Berlín",
+    "Treaty of Prague": "Tratado de Praga",
+    "Treaty of Versailles": "Tratado de Versalles",
+    "Congress of Berlin": "Congreso de Berlín",
+    "Congress of Vienna": "Congreso de Viena",
+    "Concert of Europe": "Concierto Europeo",
+    "Holy Alliance": "Santa Alianza",
+    "Quadruple Alliance": "Cuádruple Alianza",
+    "Ems Dispatch": "Despacho de Ems",
+    "Ems Telegram": "Telegrama de Ems",
+    "Anti-Socialist Laws": "Leyes Antisocialistas",
+    "May Laws": "Leyes de Mayo",
+    "Falk Laws": "Leyes Falk",
+    # ─── Guerras y conflictos ───
+    "Franco-Prussian War": "guerra franco-prusiana",
+    "Austro-Prussian War": "guerra austro-prusiana",
+    "Seven Weeks' War": "guerra de las Siete Semanas",
+    "Danish War": "guerra de los Ducados",
+    "Second Schleswig War": "Segunda Guerra de Schleswig",
+    "Crimean War": "guerra de Crimea",
+    "Napoleonic Wars": "guerras napoleónicas",
+    "Thirty Years' War": "guerra de los Treinta Años",
+    "Seven Years' War": "guerra de los Siete Años",
+    "First World War": "Primera Guerra Mundial",
+    "World War I": "Primera Guerra Mundial",
+    "Wars of Liberation": "guerras de Liberación",
+    "Wars of Unification": "guerras de Unificación",
+    # ─── Movimientos, partidos e ideologías ───
+    "liberalism": "liberalismo",
+    "liberal": "liberal",
+    "liberals": "liberales",
+    "conservatism": "conservadurismo",
+    "conservative": "conservador",
+    "conservatives": "conservadores",
+    "Conservative Party": "Partido Conservador",
+    "Free Conservative Party": "Partido Conservador Libre",
+    "National Liberal Party": "Partido Nacional Liberal",
+    "National Liberals": "nacional-liberales",
+    "Progressive Party": "Partido Progresista",
+    "Progressives": "progresistas",
+    "Centre Party": "Zentrum",
+    "Center Party": "Zentrum",
+    "Catholic Centre": "Zentrum",
+    "Zentrum": "Zentrum",
+    "Social Democrats": "socialdemócratas",
+    "Social Democratic Party": "Partido Socialdemócrata",
+    "SPD": "SPD",
+    "socialism": "socialismo",
+    "socialist": "socialista",
+    "socialists": "socialistas",
+    "nationalism": "nacionalismo",
+    "nationalist": "nacionalista",
+    "Pan-Germanism": "pangermanismo",
+    "Pan-Slavism": "paneslavismo",
+    "ultramontane": "ultramontano",
+    "ultramontanism": "ultramontanismo",
+    "Catholicism": "catolicismo",
+    "Protestantism": "protestantismo",
+    "Lutheranism": "luteranismo",
+    "Pietism": "pietismo",
+    "pietist": "pietista",
+    "Jewish": "judío",
+    "Jews": "judíos",
+    "anti-Semitism": "antisemitismo",
+    "anti-Semitic": "antisemita",
+    # ─── Conceptos historiográficos y políticos ───
+    "blood and iron": "sangre y hierro",
+    "iron and blood": "hierro y sangre",
+    "balance of power": "equilibrio de poder",
+    "great power": "gran potencia",
+    "great powers": "grandes potencias",
+    "raison d'état": "razón de Estado",
+    "reason of state": "razón de Estado",
+    "statesman": "estadista",
+    "statesmen": "estadistas",
+    "statecraft": "arte de gobernar",
+    "diplomacy": "diplomacia",
+    "diplomat": "diplomático",
+    "diplomatic": "diplomático",
+    "alliance": "alianza",
+    "alliances": "alianzas",
+    "treaty": "tratado",
+    "treaties": "tratados",
+    "constitution": "constitución",
+    "constitutional": "constitucional",
+    "parliament": "parlamento",
+    "parliamentary": "parlamentario",
+    "parliamentarism": "parlamentarismo",
+    "deputy": "diputado",
+    "deputies": "diputados",
+    "suffrage": "sufragio",
+    "universal suffrage": "sufragio universal",
+    "franchise": "franquicia electoral",
+    "estate": "estamento",
+    "estates": "estamentos",
+    "nobility": "nobleza",
+    "aristocracy": "aristocracia",
+    "aristocratic": "aristocrático",
+    "bourgeoisie": "burguesía",
+    "bourgeois": "burgués",
+    "peasantry": "campesinado",
+    "peasant": "campesino",
+    "serf": "siervo",
+    "serfdom": "servidumbre",
+    "annexation": "anexión",
+    "unification": "unificación",
+    "hegemony": "hegemonía",
+    "supremacy": "supremacía",
+    "indemnity": "indemnización",
+    "reparations": "reparaciones",
+    "abdication": "abdicación",
+    "regency": "regencia",
+    "regent": "regente",
+    "court": "corte",
+    "cabinet": "gabinete",
+    "ministry": "ministerio",
+    # ─── Personajes (NO traducir nombres propios; sí cargos/contextos cuando aparecen aparte) ───
+    "Otto von Bismarck": "Otto von Bismarck",
+    "Bismarck": "Bismarck",
+    "Wilhelm I": "Guillermo I",
+    "King Wilhelm": "el rey Guillermo",
+    "Wilhelm II": "Guillermo II",
+    "Friedrich III": "Federico III",
+    "Friedrich Wilhelm IV": "Federico Guillermo IV",
+    "Friedrich Wilhelm": "Federico Guillermo",
+    "Augusta": "Augusta",
+    "Johanna": "Johanna",
+    "Albrecht von Roon": "Albrecht von Roon",
+    "Roon": "Roon",
+    "Helmuth von Moltke": "Helmuth von Moltke",
+    "Moltke": "Moltke",
+    "Manteuffel": "Manteuffel",
+    "Holstein": "Holstein",
+    "Eulenburg": "Eulenburg",
+    "Caprivi": "Caprivi",
+    "Hohenlohe": "Hohenlohe",
+    "Bülow": "Bülow",
+    "Lassalle": "Lassalle",
+    "Ferdinand Lassalle": "Ferdinand Lassalle",
+    "Karl Marx": "Karl Marx",
+    "Engels": "Engels",
+    "Bebel": "Bebel",
+    "Liebknecht": "Liebknecht",
+    "Windthorst": "Windthorst",
+    "Lasker": "Lasker",
+    "Bennigsen": "Bennigsen",
+    "Bleichröder": "Bleichröder",
+    "Napoleon III": "Napoleón III",
+    "Napoleon": "Napoleón",
+    "Bonaparte": "Bonaparte",
+    "Franz Joseph": "Francisco José",
+    "Metternich": "Metternich",
+    "Schwarzenberg": "Schwarzenberg",
+    "Andrássy": "Andrássy",
+    "Beust": "Beust",
+    "Disraeli": "Disraeli",
+    "Gladstone": "Gladstone",
+    "Salisbury": "Salisbury",
+    "Palmerston": "Palmerston",
+    "Queen Victoria": "la reina Victoria",
+    "Victoria": "Victoria",
+    "Alexander II": "Alejandro II",
+    "Alexander III": "Alejandro III",
+    "Nicholas I": "Nicolás I",
+    "Gorchakov": "Gorchakov",
+    "Cavour": "Cavour",
+    "Garibaldi": "Garibaldi",
+    "Victor Emmanuel": "Víctor Manuel",
+    "Pope Pius IX": "el papa Pío IX",
+    "Pius IX": "Pío IX",
+    "Leo XIII": "León XIII",
+    # ─── Vocabulario de prosa académica ───
+    "century": "siglo",
+    "centuries": "siglos",
+    "decade": "década",
+    "decades": "décadas",
+    "memoir": "memoria",
+    "memoirs": "memorias",
+    "diary": "diario",
+    "letters": "cartas",
+    "correspondence": "correspondencia",
+    "biographer": "biógrafo",
+    "historian": "historiador",
+    "historians": "historiadores",
+    "scholar": "estudioso",
+    "scholarship": "investigación académica",
+    "archive": "archivo",
+    "archives": "archivos",
+    "source": "fuente",
+    "sources": "fuentes",
+    "primary source": "fuente primaria",
+    "secondary source": "fuente secundaria",
+}
+
+SYSTEM_PROMPT_BISMARCK = """Eres un traductor literario profesional especializado en historia europea, biografía política y prosa académica. Traduces del inglés al español latinoamericano neutro para un lector peruano culto interesado en historia del siglo XIX.
+
+Este libro es "Bismarck: A Life" de Jonathan Steinberg (Oxford University Press, 2011). Es una biografía académica rigurosa de Otto von Bismarck (1815-1898), el canciller que unificó Alemania. Steinberg es historiador (Penn, Cambridge) y escribe en prosa erudita pero accesible: cita extensamente cartas, diarios y despachos diplomáticos en alemán, inglés y francés; alterna análisis político con retrato psicológico; mezcla historiografía con narrativa.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes.
+   - Preserva su posición EXACTA dentro del texto.
+
+2. PRESERVA TODOS los tags HTML exactamente: <em>, <strong>, <i>, <b>, <a href>, <span>, <sup>, <br/>, <cite>, <q>, etc. Mismos atributos (href, id, class, data-*, epub:type, lang, xml:lang), mismas cantidades, mismo orden.
+
+3. CITAS EN ALEMÁN, FRANCÉS O LATÍN — CRÍTICO:
+   - Steinberg cita CONSTANTEMENTE fragmentos en alemán (cartas de Bismarck, despachos), francés y latín. Estas citas NO se traducen al español.
+   - Si una cita está marcada con <i>, <em>, <span lang="de">, <span class="ital">, o entre comillas en alemán/francés/latín, déjala IDÉNTICA al original.
+   - Si Steinberg ofrece una traducción al inglés entre paréntesis o tras la cita, esa traducción SÍ se vierte al español.
+   - Reconoce alemán por: ß, ä/ö/ü, palabras como "der/die/das/und/ich/nicht/sehr/aber/wir/sie", construcciones "zu...en", participios "ge-...-t/-en". Reconoce francés por: ç, accents (à/é/è/ê), "le/la/les/de/du/que/qui". Reconoce latín por: terminaciones "-us/-um/-orum/-itur", frases tipo "in statu", "ad hoc", "casus belli".
+   - Cuando dudes si traducir o no: si la frase se siente como cita en lengua extranjera, NO la traduzcas.
+
+4. NOMBRES PROPIOS — reglas estrictas:
+   - APELLIDOS alemanes, austriacos, rusos, polacos, etc. NO se traducen NUNCA: Bismarck, Roon, Moltke, Holstein, Eulenburg, Manteuffel, Lassalle, Marx, Windthorst, Bennigsen, Bleichröder, Gorchakov, Andrássy, Disraeli, Gladstone.
+   - NOMBRES DE PILA de monarcas y papas se ESPAÑOLIZAN: Wilhelm I → Guillermo I, Friedrich III → Federico III, Franz Joseph → Francisco José, Napoleon III → Napoleón III, Alexander II → Alejandro II, Victor Emmanuel → Víctor Manuel, Pius IX → Pío IX. Excepción: si el nombre aparece junto al apellido (Friedrich Wilhelm von Bismarck), se mantiene en alemán.
+   - Otros nombres de pila NO se españolizan: Otto von Bismarck (no "Otón"), Karl Marx (no "Carlos"), Helmuth von Moltke.
+   - PARTÍCULAS nobiliarias "von", "zu", "auf der" se mantienen en minúscula.
+   - DINASTÍAS: Hohenzollern, Habsburgo, Romanov, Wittelsbach se preservan; "Casa de Hohenzollern", "Casa de Habsburgo".
+
+5. TOPÓNIMOS — usar exónimos españoles tradicionales cuando existen:
+   Berlin → Berlín, Vienna → Viena, Frankfurt → Fráncfort, Munich → Múnich, Cologne → Colonia, Hamburg → Hamburgo, Strasbourg → Estrasburgo, Versailles → Versalles, Sedan → Sedán, Hanover → Hannover, Bavaria → Baviera, Saxony → Sajonia, Württemberg → Wurtemberg, Rhineland → Renania, Westphalia → Westfalia, Brandenburg → Brandeburgo, Mecklenburg → Mecklemburgo, Galicia → Galitzia, Lorraine → Lorena, Bohemia → Bohemia.
+   Sin exónimo asentado → mantener forma original (Königsberg, Bad Ems, Lübeck).
+
+6. TÍTULOS Y CARGOS — minúscula en español (regla ortográfica):
+   - "Chancellor Bismarck" → "el canciller Bismarck"
+   - "Kaiser Wilhelm" → "el káiser Guillermo"
+   - "Minister-President" → "ministro presidente"
+   - "Crown Prince Friedrich" → "el príncipe heredero Federico"
+   - Cuando el cargo encabeza la frase o aparece como título de capítulo, puede ir capitalizado.
+
+7. TÉRMINOS HISTÓRICOS ALEMANES — SE MANTIENEN EN ALEMÁN, EN CURSIVA:
+   Realpolitik, Kulturkampf, Junker(s), Reichstag, Bundesrat, Landtag, Reich, Zollverein, Vormärz, Sonderweg, Weltpolitik, Gründerzeit, Ausgleich, Bürgertum, Sozialistengesetz.
+   Si el original ya los marca con <i> o <em>, conserva los tags. Si no, NO agregues cursiva — preserva el formato exacto del original.
+
+8. CONCEPTOS POLÍTICOS — traducción consistente (respetar glosario):
+   chancellor → canciller; statesman → estadista; balance of power → equilibrio de poder; great power(s) → gran(des) potencia(s); blood and iron → "sangre y hierro" (entre comillas); unification → unificación; raison d'état → razón de Estado; suffrage → sufragio; estate (clase) → estamento; bourgeoisie → burguesía; nobility → nobleza; serfdom → servidumbre.
+
+9. NOMBRES DE GUERRAS Y TRATADOS — convención española:
+   "Franco-Prussian War" → "guerra franco-prusiana" (minúscula); "Austro-Prussian War" → "guerra austro-prusiana"; "Seven Weeks' War" → "guerra de las Siete Semanas"; "Crimean War" → "guerra de Crimea"; "Treaty of Frankfurt" → "Tratado de Fráncfort"; "Congress of Berlin" → "Congreso de Berlín"; "Ems Dispatch" → "Despacho de Ems".
+
+10. ESPAÑOL LATAM NEUTRO, lector peruano culto:
+    - "tú" como segunda persona (no "vos", no "vosotros"). El autor casi nunca se dirige al lector, pero cuando lo haga, "tú".
+    - Sin modismos regionales ("chévere", "bacán", "guay", "chido", "mola" — NINGUNO).
+    - Sin conjugaciones peninsulares ("vosotros tenéis", "habríais" — NO).
+    - Registro: académico, ensayístico, sintaxis cuidada. Permite oraciones largas con subordinadas; el autor escribe así y debes preservar la cadencia.
+
+11. TONO DE STEINBERG — CRÍTICO:
+    - Erudito pero vivaz. Mezcla análisis frío con juicios morales y observaciones psicológicas agudas (Bismarck era misógino, hipocondríaco, voraz, brillante).
+    - Cita mucho y comenta. Las citas largas en bloque (<blockquote>) preservan su propia retórica; el comentario de Steinberg vuelve a la prosa académica.
+    - Ironía sutil, sin caricaturizar. Steinberg admira y deplora a Bismarck; preserva esa ambivalencia. NO suavices, NO endurezcas.
+    - NO simplifiques oraciones complejas. NO rompas párrafos. Preserva la sofisticación del original.
+    - Evita anglicismos innecesarios y traducciones literales torpes ("interesante" pobre, "actually" → "en realidad", no "actualmente").
+
+12. NÚMEROS, FECHAS Y MONEDAS:
+    - Fechas: "March 14, 1871" → "14 de marzo de 1871". Días/meses en minúscula.
+    - Siglos: "the nineteenth century" → "el siglo XIX" (números romanos).
+    - Monedas: "thaler" → "tálero" (singular "tálero", plural "táleros"); "mark" → "marco"; "pound" → "libra"; "franc" → "franco". "Reichstaler" se mantiene.
+
+13. TÍTULOS DE OBRAS y publicaciones (libros, revistas, periódicos): se mantienen en su idioma original. NO traduzcas títulos de libros citados. Si están entre <i> o <span class="ital">, preserva los tags.
+
+14. URLs, IDs y links: preserva EXACTAMENTE como están. Las notas al pie <sup><a href="..."> son referencias estructurales — NO las traduzcas, NO las muevas.
+
+15. NO expliques, NO resumas, NO agregues notas del traductor, NO expandas siglas que el autor dejó sin expandir.
+
+16. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_BISMARCK = [
+    r"^cover\.x?html$",
+    r"titlepage\.x?html$",
+    r"copyright\.x?html$",
+    r"halftitle\.x?html$",
+    r"^index\.x?html$",        # índice alfabético — no útil traducido
+    r"^index\d*\.x?html$",
+]
+
+# Perfil "slow_looking" — Shari Tishman / Routledge (Slow Looking: The Art, Science, and History of Learning, 2018)
+# Ensayo académico-divulgativo sobre observación, atención y aprendizaje. Project Zero / Harvard Graduate School of Education.
+GLOSSARY_SLOW_LOOKING: dict[str, str] = {
+    # ─── Conceptos centrales del libro ───
+    "slow looking": "observación lenta",
+    "Slow Looking": "Observación Lenta",
+    "close looking": "observación atenta",
+    "close reading": "lectura atenta",
+    "noticing": "advertir",
+    "to notice": "advertir",
+    "observation": "observación",
+    "observations": "observaciones",
+    "observer": "observador",
+    "observers": "observadores",
+    "attention": "atención",
+    "perception": "percepción",
+    "perceptual": "perceptivo",
+    "perceiving": "percibir",
+    "awareness": "conciencia",
+    "mindful": "consciente",
+    "mindfulness": "atención plena",
+    "inquiry": "indagación",
+    "thinking routine": "rutina de pensamiento",
+    "thinking routines": "rutinas de pensamiento",
+    "visible thinking": "pensamiento visible",
+    "Visible Thinking": "Pensamiento Visible",
+    "meaning making": "construcción de significado",
+    "sensemaking": "construcción de sentido",
+    "See/Think/Wonder": "Veo/Pienso/Me pregunto",
+    "See Think Wonder": "Veo, Pienso, Me pregunto",
+    # ─── Educación / pedagogía ───
+    "learning": "aprendizaje",
+    "learner": "aprendiz",
+    "learners": "aprendices",
+    "teaching": "enseñanza",
+    "teacher": "docente",
+    "teachers": "docentes",
+    "educator": "educador",
+    "educators": "educadores",
+    "student": "estudiante",
+    "students": "estudiantes",
+    "classroom": "aula",
+    "classrooms": "aulas",
+    "curriculum": "currículo",
+    "curricula": "currículos",
+    "pedagogy": "pedagogía",
+    "pedagogical": "pedagógico",
+    "education": "educación",
+    "educational": "educativo",
+    "schooling": "escolarización",
+    "lesson": "lección",
+    "lessons": "lecciones",
+    "lesson plan": "plan de lección",
+    "instruction": "instrucción",
+    "instructional": "instruccional",
+    "assessment": "evaluación",
+    "skill": "habilidad",
+    "skills": "habilidades",
+    "competence": "competencia",
+    "knowledge": "conocimiento",
+    "understanding": "comprensión",
+    "comprehension": "comprensión",
+    "engagement": "implicación",
+    "discipline": "disciplina",
+    "subject matter": "materia",
+    "K-12": "K-12",
+    "elementary school": "escuela primaria",
+    "middle school": "escuela media",
+    "high school": "secundaria",
+    "undergraduate": "pregrado",
+    "graduate": "posgrado",
+    # ─── Arte y museos ───
+    "art": "arte",
+    "artwork": "obra de arte",
+    "artworks": "obras de arte",
+    "work of art": "obra de arte",
+    "works of art": "obras de arte",
+    "art history": "historia del arte",
+    "art historian": "historiador del arte",
+    "art education": "educación artística",
+    "artist": "artista",
+    "artists": "artistas",
+    "painting": "pintura",
+    "paintings": "pinturas",
+    "drawing": "dibujo",
+    "drawings": "dibujos",
+    "sculpture": "escultura",
+    "sculptures": "esculturas",
+    "photograph": "fotografía",
+    "photography": "fotografía",
+    "museum": "museo",
+    "museums": "museos",
+    "gallery": "galería",
+    "galleries": "galerías",
+    "exhibit": "exposición",
+    "exhibition": "exposición",
+    "exhibitions": "exposiciones",
+    "curator": "curador",
+    "curators": "curadores",
+    "collection": "colección",
+    "portrait": "retrato",
+    "landscape": "paisaje",
+    "still life": "naturaleza muerta",
+    "canvas": "lienzo",
+    "brushstroke": "pincelada",
+    "composition": "composición",
+    "abstract": "abstracto",
+    "figurative": "figurativo",
+    # ─── Ciencia y observación natural ───
+    "science": "ciencia",
+    "scientific": "científico",
+    "scientist": "científico",
+    "scientists": "científicos",
+    "naturalist": "naturalista",
+    "naturalists": "naturalistas",
+    "specimen": "espécimen",
+    "specimens": "especímenes",
+    "discovery": "descubrimiento",
+    "experiment": "experimento",
+    "experimental": "experimental",
+    "hypothesis": "hipótesis",
+    "field guide": "guía de campo",
+    "field notebook": "cuaderno de campo",
+    "biology": "biología",
+    "ecology": "ecología",
+    "natural history": "historia natural",
+    "evidence": "evidencia",
+    "data": "datos",
+    "phenomenon": "fenómeno",
+    "phenomena": "fenómenos",
+    # ─── Historia y cultura material ───
+    "artifact": "artefacto",
+    "artifacts": "artefactos",
+    "archive": "archivo",
+    "archives": "archivos",
+    "primary source": "fuente primaria",
+    "secondary source": "fuente secundaria",
+    "historical": "histórico",
+    "history": "historia",
+    "historian": "historiador",
+    # ─── Verbos y conceptos analíticos comunes ───
+    "describe": "describir",
+    "description": "descripción",
+    "descriptive": "descriptivo",
+    "interpret": "interpretar",
+    "interpretation": "interpretación",
+    "interpretive": "interpretativo",
+    "analyze": "analizar",
+    "analysis": "análisis",
+    "analytical": "analítico",
+    "reflect": "reflexionar",
+    "reflection": "reflexión",
+    "reflective": "reflexivo",
+    "evidence-based": "basado en evidencia",
+    "judgment": "juicio",
+    "insight": "intuición",
+    "insights": "intuiciones",
+    # ─── Personas, instituciones, programas — NO traducir ───
+    "Shari Tishman": "Shari Tishman",
+    "Tishman": "Tishman",
+    "Project Zero": "Project Zero",
+    "Harvard": "Harvard",
+    "Harvard Graduate School of Education": "Harvard Graduate School of Education",
+    "Howard Gardner": "Howard Gardner",
+    "David Perkins": "David Perkins",
+    "Ron Ritchhart": "Ron Ritchhart",
+    "Reggio Emilia": "Reggio Emilia",
+    "Smithsonian": "Smithsonian",
+    "MoMA": "MoMA",
+    "Metropolitan Museum": "Metropolitan Museum",
+    "Routledge": "Routledge",
+    # ─── Conceptos misceláneos ───
+    "mindset": "mentalidad",
+    "habit of mind": "hábito mental",
+    "habits of mind": "hábitos mentales",
+    "framework": "marco",
+    "case study": "estudio de caso",
+    "case studies": "estudios de caso",
+    "exercise": "ejercicio",
+    "exercises": "ejercicios",
+    "activity": "actividad",
+    "activities": "actividades",
+}
+
+SYSTEM_PROMPT_SLOW_LOOKING = """Eres un traductor literario profesional especializado en ensayos académicos sobre educación, arte y ciencia. Traduces del inglés al español latinoamericano neutro para un lector peruano interesado en pedagogía, arte y aprendizaje activo.
+
+Este libro es "Slow Looking: The Art, Science, and History of Learning" de Shari Tishman (Routledge, 2018). La autora es investigadora principal de Project Zero (Harvard Graduate School of Education). El libro propone la "observación lenta" (slow looking) como práctica deliberada de atención sostenida sobre objetos, obras de arte, fenómenos naturales y artefactos históricos. Es un ensayo accesible, ilustrado con ejemplos concretos de aulas, museos y campo, fundamentado en investigación pero escrito con voz cálida y didáctica.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes.
+   - Preserva su posición EXACTA dentro del texto.
+
+2. PRESERVA TODOS los tags HTML exactamente: <em>, <strong>, <i>, <b>, <a href>, <span>, <sup>, <br/>, <cite>, <q>, etc. Mismos atributos (href, id, class, data-*, epub:type, lang, xml:lang), mismas cantidades, mismo orden.
+
+3. CONCEPTO CENTRAL — "slow looking" → "observación lenta":
+   - Tradúcelo SIEMPRE así, sin excepción. Es el término técnico del libro.
+   - Cuando aparezca en mayúsculas (título de capítulo, encabezado), usa "Observación Lenta".
+   - "to look slowly" → "observar con lentitud" / "observar lentamente".
+   - "looking slowly" → "observar con lentitud".
+
+4. RUTINAS DE PENSAMIENTO de Project Zero — nombres canónicos:
+   - "See/Think/Wonder" → "Veo/Pienso/Me pregunto" (con barras y mayúsculas iniciales).
+   - "thinking routine" → "rutina de pensamiento" (siempre).
+   - "visible thinking" → "pensamiento visible".
+   - "Project Zero" → "Project Zero" (NO traducir, es el nombre del programa).
+
+5. TERMINOLOGÍA EDUCATIVA — traducción consistente (respetar glosario):
+   teacher → docente; student → estudiante; classroom → aula; learner → aprendiz; learning → aprendizaje; curriculum → currículo; pedagogy → pedagogía; lesson → lección; assessment → evaluación; engagement → implicación; understanding → comprensión.
+   Consistencia TOTAL: "teacher" SIEMPRE es "docente", no "maestro" ni "profesor", a menos que el original distinga ("schoolteacher" → "maestro de escuela").
+
+6. TERMINOLOGÍA ARTÍSTICA — traducción consistente:
+   artwork → obra de arte; museum → museo; gallery → galería; curator → curador; exhibit/exhibition → exposición; portrait → retrato; landscape → paisaje; still life → naturaleza muerta; brushstroke → pincelada.
+   Movimientos artísticos: "Impressionism" → "impresionismo" (minúscula); "Cubism" → "cubismo"; "Romanticism" → "romanticismo".
+
+7. NOMBRES PROPIOS — reglas:
+   - Personas (autores, artistas, científicos, educadores) NO se traducen: Shari Tishman, Howard Gardner, David Perkins, Charles Darwin, Vincent van Gogh, Leonardo da Vinci, etc.
+   - Nombres de pila NO se españolizan (excepto monarcas/papas, que aquí casi no aparecen): Shari, no "Sary".
+   - Instituciones NO se traducen: Project Zero, Harvard Graduate School of Education, MoMA, Smithsonian, Metropolitan Museum.
+   - Topónimos: usar exónimo español si está asentado (Florence → Florencia, Athens → Atenas, New York → Nueva York). Sin exónimo → mantener original.
+
+8. TÍTULOS DE OBRAS DE ARTE Y LIBROS — se mantienen en idioma original:
+   - "The Starry Night" → "The Starry Night" (no "La noche estrellada").
+   - Si están entre <em>, <i>, <cite> o <span class="ital">, conserva los tags.
+   - EXCEPCIÓN: si Tishman ofrece la traducción literal entre paréntesis o el título es universalmente conocido en español, puedes españolizar (ej: "Las Meninas" se queda en español).
+
+9. CITAS DE ESTUDIANTES Y AULAS — naturalidad:
+   - Cuando Tishman cita comentarios de estudiantes o transcripciones de aula, traduce con naturalidad oral, NO formal. Mantén dudas, "uhms", repeticiones.
+   - Conserva el género gramatical de quien habla cuando esté indicado.
+
+10. ESPAÑOL LATAM NEUTRO, lector peruano:
+    - "tú" como segunda persona (no "vos", no "vosotros"). Tishman se dirige al lector con frecuencia: "tú observas", "puedes ver", "intenta esto".
+    - Sin modismos regionales ("chévere", "bacán", "guay", "chido", "mola" — NINGUNO).
+    - Sin conjugaciones peninsulares ("vosotros tenéis", "habéis").
+    - Registro: claro, didáctico, cálido. Evita la prosa académica seca; Tishman invita al lector a la práctica.
+
+11. TONO DE TISHMAN — CRÍTICO:
+    - Cálido, conversacional pero culto. Combina anécdotas (visitas a museos, clases, salidas de campo) con marco teórico.
+    - Voz en primera persona del singular y plural ("I once watched...", "we tend to..."): preserva esa cercanía.
+    - Invita al lector a probar las prácticas. Cuando dice "Try this:" → "Prueba esto:" o "Inténtalo:" según fluya.
+    - NO endurezcas el registro. NO simplifiques las ideas. NO rompas el ritmo afirmativo.
+
+12. EJEMPLOS, EJERCICIOS Y RECUADROS:
+    - Tishman incluye recuadros con ejercicios prácticos (mira un objeto durante 10 minutos, lista lo que ves, etc.). Mantén el imperativo directo en segunda persona del singular (tú): "Elige un objeto", "Escribe lo que notas", "Comparte con un compañero".
+
+13. NÚMEROS, MEDIDAS, FECHAS:
+    - Fechas: "March 14, 2017" → "14 de marzo de 2017" (días/meses en minúscula).
+    - Siglos: "the twenty-first century" → "el siglo XXI" (números romanos).
+    - Medidas: pulgadas → pulgadas (con cm entre paréntesis si Tishman lo hace); pies → pies; mantener el sistema original cuando es citado.
+
+14. URLs, IDs, hrefs, footnotes (<sup><a href="...">N</a></sup>): preserva EXACTAMENTE.
+
+15. NO expliques, NO resumas, NO agregues notas del traductor.
+
+16. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_SLOW_LOOKING = [
+    r"^cover\.x?html$",
+    r"titlepage\.x?html$",
+    r"copyright\.x?html$",
+    r"halftitle\.x?html$",
+    r"^index\.x?html$",
+    r"^index\d*\.x?html$",
+]
+
+# Perfil "the_score" — C. Thi Nguyen / Penguin Group (The Score: How to Stop Playing Somebody Else's Game, 2026)
+# Filosofía social y ética. Nguyen es filósofo (Utah) conocido por trabajos sobre gamificación, valores,
+# agencia, atrapamiento epistémico. El libro analiza cómo las métricas, rankings y juegos colonizan la vida.
+GLOSSARY_THE_SCORE: dict[str, str] = {
+    # ─── Conceptos centrales del libro / pensamiento de Nguyen ───
+    "the score": "el score",
+    "score": "score",
+    "scores": "scores",
+    "scoring": "puntuación",
+    "value capture": "captura de valor",
+    "value-capture": "captura de valor",
+    "gamification": "gamificación",
+    "gamified": "gamificado",
+    "gamify": "gamificar",
+    "epistemic trap": "trampa epistémica",
+    "epistemic traps": "trampas epistémicas",
+    "echo chamber": "cámara de eco",
+    "echo chambers": "cámaras de eco",
+    "moral outrage": "indignación moral",
+    "agency": "agencia",
+    "rational agency": "agencia racional",
+    "self-trust": "autoconfianza",
+    "intellectual autonomy": "autonomía intelectual",
+    "moral clarity": "claridad moral",
+    "thinking for oneself": "pensar por uno mismo",
+    # ─── Métricas, rankings, cuantificación ───
+    "metric": "métrica",
+    "metrics": "métricas",
+    "quantification": "cuantificación",
+    "quantify": "cuantificar",
+    "quantified": "cuantificado",
+    "quantifying": "cuantificación",
+    "ranking": "ranking",
+    "rankings": "rankings",
+    "leaderboard": "tabla de posiciones",
+    "leaderboards": "tablas de posiciones",
+    "KPI": "KPI",
+    "KPIs": "KPIs",
+    "key performance indicator": "indicador clave de desempeño",
+    "performance metric": "métrica de desempeño",
+    "performance review": "evaluación de desempeño",
+    "Goodhart's Law": "Ley de Goodhart",
+    "Goodhart's law": "ley de Goodhart",
+    "proxy": "proxy",
+    "proxies": "proxys",
+    "legibility": "legibilidad",
+    "legible": "legible",
+    "audit": "auditoría",
+    "audits": "auditorías",
+    "auditing": "auditoría",
+    "benchmark": "benchmark",
+    "benchmarks": "benchmarks",
+    "benchmarking": "evaluación comparativa",
+    # ─── Conceptos filosóficos ───
+    "philosophy": "filosofía",
+    "philosopher": "filósofo",
+    "philosophers": "filósofos",
+    "philosophical": "filosófico",
+    "ethics": "ética",
+    "ethical": "ético",
+    "moral": "moral",
+    "morality": "moralidad",
+    "value": "valor",
+    "values": "valores",
+    "valuing": "valoración",
+    "intrinsic": "intrínseco",
+    "intrinsically": "intrínsecamente",
+    "instrumental": "instrumental",
+    "instrumentally": "instrumentalmente",
+    "end": "fin",
+    "ends": "fines",
+    "means": "medios",
+    "normative": "normativo",
+    "normativity": "normatividad",
+    "epistemology": "epistemología",
+    "epistemic": "epistémico",
+    "epistemically": "epistémicamente",
+    "phenomenology": "fenomenología",
+    "phenomenological": "fenomenológico",
+    "aesthetic": "estético",
+    "aesthetics": "estética",
+    "rationality": "racionalidad",
+    "rational": "racional",
+    "reason": "razón",
+    "reasoning": "razonamiento",
+    "reasonable": "razonable",
+    "deliberation": "deliberación",
+    "deliberate": "deliberar",
+    "judgment": "juicio",
+    "judgments": "juicios",
+    "moral judgment": "juicio moral",
+    "moral judgments": "juicios morales",
+    "expertise": "experticia",
+    "expert": "experto",
+    "experts": "expertos",
+    # ─── Juegos, deporte, estructura lúdica ───
+    "game": "juego",
+    "games": "juegos",
+    "gameplay": "jugabilidad",
+    "playing": "jugar",
+    "to play": "jugar",
+    "win": "ganar",
+    "winning": "ganar",
+    "loss": "pérdida",
+    "rules": "reglas",
+    "goal": "meta",
+    "goals": "metas",
+    "victory condition": "condición de victoria",
+    "agency in games": "agencia en los juegos",
+    "striving play": "juego como búsqueda",
+    # ─── Tecnología, plataformas, redes sociales ───
+    "platform": "plataforma",
+    "platforms": "plataformas",
+    "algorithm": "algoritmo",
+    "algorithms": "algoritmos",
+    "algorithmic": "algorítmico",
+    "social media": "redes sociales",
+    "social network": "red social",
+    "Twitter": "Twitter",
+    "Facebook": "Facebook",
+    "Instagram": "Instagram",
+    "TikTok": "TikTok",
+    "YouTube": "YouTube",
+    "Yelp": "Yelp",
+    "engagement": "implicación",
+    "user engagement": "implicación del usuario",
+    "click": "clic",
+    "clicks": "clics",
+    "like": "like",
+    "likes": "likes",
+    "follower": "seguidor",
+    "followers": "seguidores",
+    "viral": "viral",
+    "trending": "tendencia",
+    # ─── Vida académica / institucional ───
+    "academia": "academia",
+    "academic": "académico",
+    "scholar": "estudioso",
+    "scholarship": "investigación académica",
+    "university": "universidad",
+    "universities": "universidades",
+    "tenure": "tenure",
+    "tenure-track": "tenure-track",
+    "department": "departamento",
+    "publication": "publicación",
+    "peer review": "revisión por pares",
+    "peer-reviewed": "revisado por pares",
+    "citation": "cita",
+    "citations": "citas",
+    "h-index": "índice h",
+    "impact factor": "factor de impacto",
+    "research": "investigación",
+    "research output": "producción investigativa",
+    "academic capitalism": "capitalismo académico",
+    "ranking system": "sistema de rankings",
+    # ─── Burocracia, gobernanza, política pública ───
+    "bureaucracy": "burocracia",
+    "bureaucratic": "burocrático",
+    "bureaucrat": "burócrata",
+    "governance": "gobernanza",
+    "policy": "política",
+    "public policy": "política pública",
+    "regulation": "regulación",
+    "regulator": "regulador",
+    "compliance": "cumplimiento",
+    "managerialism": "gerencialismo",
+    "neoliberal": "neoliberal",
+    "neoliberalism": "neoliberalismo",
+    "accountability": "rendición de cuentas",
+    "transparency": "transparencia",
+    "standardization": "estandarización",
+    "standardize": "estandarizar",
+    # ─── Atención y vida cotidiana ───
+    "attention": "atención",
+    "attentional": "atencional",
+    "distraction": "distracción",
+    "focus": "foco",
+    "engagement": "implicación",
+    "self": "yo",
+    "selfhood": "individualidad",
+    "identity": "identidad",
+    "self-knowledge": "autoconocimiento",
+    "well-being": "bienestar",
+    "wellbeing": "bienestar",
+    "flourishing": "florecimiento",
+    # ─── Personas, instituciones — NO traducir ───
+    "C. Thi Nguyen": "C. Thi Nguyen",
+    "Nguyen": "Nguyen",
+    "Iris Murdoch": "Iris Murdoch",
+    "Murdoch": "Murdoch",
+    "James C. Scott": "James C. Scott",
+    "Bernard Suits": "Bernard Suits",
+    "Aristotle": "Aristóteles",
+    "Kant": "Kant",
+    "Foucault": "Foucault",
+    "Wittgenstein": "Wittgenstein",
+    "John Dewey": "John Dewey",
+    "Charles Goodhart": "Charles Goodhart",
+    "Penguin": "Penguin",
+    "Penguin Press": "Penguin Press",
+    "Penguin Group": "Penguin Group",
+    "MIT": "MIT",
+    "Harvard": "Harvard",
+    "Stanford": "Stanford",
+    "Oxford": "Oxford",
+    "Cambridge": "Cambridge",
+    "Princeton": "Princeton",
+    "University of Utah": "University of Utah",
+    # ─── Conceptos auxiliares ───
+    "framework": "marco",
+    "case study": "estudio de caso",
+    "case studies": "estudios de caso",
+    "thought experiment": "experimento mental",
+    "thought experiments": "experimentos mentales",
+    "rule of thumb": "regla general",
+    "trade-off": "compromiso",
+    "tradeoff": "compromiso",
+    "trade-offs": "compromisos",
+    "incentive": "incentivo",
+    "incentives": "incentivos",
+    "feedback loop": "bucle de retroalimentación",
+    "feedback loops": "bucles de retroalimentación",
+}
+
+SYSTEM_PROMPT_THE_SCORE = """Eres un traductor literario profesional especializado en filosofía social, ética y crítica cultural. Traduces del inglés al español latinoamericano neutro para un lector peruano culto interesado en filosofía, tecnología y vida pública.
+
+Este libro es "The Score: How to Stop Playing Somebody Else's Game" de C. Thi Nguyen (Penguin Group, 2026). Nguyen es filósofo de la Universidad de Utah, conocido por su trabajo sobre gamificación, captura de valor (value capture), atrapamiento epistémico, agencia racional y la filosofía de los juegos. El libro examina cómo las métricas, rankings y sistemas de puntuación —desde KPIs corporativos hasta likes en redes sociales— colonizan nuestras vidas, sustituyen nuestros valores propios y nos hacen jugar el juego de otros. Es un ensayo filosófico riguroso pero accesible, con ejemplos del deporte, la academia, el arte y las redes sociales.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes.
+   - Preserva su posición EXACTA.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <em>, <strong>, <i>, <b>, <a href>, <span>, <sup>, <br/>, <cite>, <q>, etc. Mismos atributos (href, id, class, data-*, epub:type, lang, xml:lang, aria-label), mismas cantidades, mismo orden. Esto incluye <span epub:type="pagebreak" id="page_X" title="X"/> que aparecen a media oración: quedan EXACTAMENTE donde están, aunque la sintaxis en español ya no fluya igual.
+
+3. CONCEPTOS TÉCNICOS DE NGUYEN — traducción estable y consistente:
+   - "value capture" → "captura de valor" SIEMPRE (concepto central; cuando aparezca en cursiva, conserva los tags).
+   - "gamification" → "gamificación"; "gamified" → "gamificado".
+   - "epistemic trap" → "trampa epistémica".
+   - "the score" / "score" → "el score" / "score" (en minúscula, sin traducir; es el término técnico del libro). EXCEPCIÓN: cuando "score" aparezca en contextos no-técnicos (ej. partituras musicales) traduce según contexto.
+   - "agency" → "agencia"; "rational agency" → "agencia racional".
+   - "Goodhart's Law" → "Ley de Goodhart" (mayúsculas iniciales — es ley nombrada).
+
+4. MÉTRICAS Y CUANTIFICACIÓN — consistencia total:
+   metric → métrica; quantification → cuantificación; ranking → ranking (no traducir); leaderboard → tabla de posiciones; KPI → KPI; proxy → proxy; legibility → legibilidad; benchmark → benchmark.
+
+5. VOCABULARIO FILOSÓFICO — traducción estándar académica:
+   - "value(s)" → "valor(es)"; "intrinsic" → "intrínseco"; "instrumental" → "instrumental".
+   - "end(s)" → "fin(es)"; "means" → "medios".
+   - "epistemic" → "epistémico"; "epistemology" → "epistemología".
+   - "judgment" → "juicio"; "moral judgment" → "juicio moral".
+   - "rationality" → "racionalidad"; "reasoning" → "razonamiento".
+   - "agency" → "agencia"; "autonomy" → "autonomía".
+   - "expertise" → "experticia" (no "pericia", siguiendo uso filosófico latinoamericano).
+
+6. NOMBRES PROPIOS:
+   - Filósofos contemporáneos (Nguyen, Murdoch, Suits, Scott, Goodhart, Dewey, Foucault, Wittgenstein) NUNCA se traducen.
+   - Filósofos clásicos SÍ se españolizan: Aristotle → Aristóteles, Plato → Platón, Descartes → Descartes (mismo).
+   - Instituciones NUNCA se traducen: MIT, Harvard, Stanford, Oxford, Cambridge, Princeton, University of Utah, Penguin Press, Penguin Group.
+   - Topónimos: usar exónimo español si está asentado (London → Londres, New York → Nueva York). Sin exónimo → mantener original.
+
+7. PLATAFORMAS Y TECNOLOGÍA — preservar nombres:
+   Twitter, Facebook, Instagram, TikTok, YouTube, Yelp, Google, Amazon — sin traducir, sin cursiva.
+   "social media" → "redes sociales"; "engagement" → "implicación"; "click" → "clic"; "like(s)" → "like(s)" (en minúscula, sin traducir, es jerga universal).
+
+8. CITAS Y PASAJES EN OTROS IDIOMAS:
+   - Citas extensas en inglés DENTRO del texto en inglés (cita literaria, frase clave): se traducen, salvo que sean una frase consagrada del autor citado.
+   - Citas en otros idiomas (francés, alemán, latín): NO traducir. Conservar idioma original.
+
+9. ESPAÑOL LATAM NEUTRO, lector peruano culto:
+   - "tú" como segunda persona (Nguyen se dirige al lector con frecuencia: "you might think", "imagine you").
+   - Sin modismos regionales ("chévere", "bacán", "guay", "chido", "mola" — NINGUNO).
+   - Sin conjugaciones peninsulares ("vosotros tenéis", "habríais").
+   - Registro: ensayístico, agudo, claro pero sofisticado. Permite oraciones complejas con subordinadas — Nguyen escribe así.
+
+10. TONO DE NGUYEN — CRÍTICO:
+    - Filosóficamente preciso pero conversacional. Mezcla rigor analítico con anécdotas (jugar Mario, escalada en roca, redes sociales).
+    - Crítico pero no cínico. Diagnostica problemas con clarividencia y propone caminos.
+    - Voz en primera persona ("I argue", "I want to suggest"): preserva esa cercanía con el lector.
+    - Usa preguntas retóricas con frecuencia ("What is going on here?"). Mantén la fuerza retórica.
+    - NO endurezcas el registro. NO simplifiques las distinciones conceptuales finas.
+
+11. EJEMPLOS Y CASOS:
+    - Nguyen usa muchos ejemplos concretos: profesores rankeados, deportistas, jugadores de videojuegos, usuarios de Twitter. Tradúcelos con naturalidad oral en los diálogos, manteniendo el registro coloquial cuando aplique.
+
+12. NÚMEROS, FECHAS Y MEDIDAS:
+    - Fechas: "March 14, 2024" → "14 de marzo de 2024" (días/meses en minúscula).
+    - Siglos: "the twenty-first century" → "el siglo XXI" (números romanos).
+    - Mantener cifras en formato original con separadores españoles (1,000,000 → 1 000 000 si Nguyen los usa; respetar formato original si es ambiguo).
+
+13. TÍTULOS DE OBRAS Y PUBLICACIONES (libros, papers, revistas): se mantienen en idioma original. NO traducir títulos. Si están entre <i> o <em>, conservar tags.
+
+14. URLs, IDs, hrefs, footnotes (<sup><a href="...">N</a></sup>): preserva EXACTAMENTE.
+
+15. NO expliques, NO resumas, NO agregues notas del traductor.
+
+16. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_THE_SCORE = [
+    r"_cvi_Cover\.xhtml$",      # imagen de portada
+    r"_tit_Title_Page\.xhtml$", # solo logos/título
+    r"_idx_Index\.xhtml$",      # índice analítico (268 KB, 1000+ entradas — no traducir)
+    r"_nav\.xhtml$",            # nav de epub3 (auto-generado por TOC)
+]
+
+# Perfil "lake_como" — Romano Guardini / Eerdmans (Letters from Lake Como, serie Ressourcement)
+# Cartas filosófico-teológicas (1923, original alemán "Briefe vom Comer See") sobre tecnología,
+# naturaleza y cultura. Traducción inglesa de Geoffrey Bromiley con introducción de Louis Dupré.
+GLOSSARY_LAKE_COMO: dict[str, str] = {
+    # ─── Conceptos centrales del libro ───
+    "Letters from Lake Como": "Cartas desde el lago de Como",
+    "Dear Friend": "Querido amigo",
+    "Lake Como": "lago de Como",
+    "Como": "Como",
+    "letters": "cartas",
+    "letter": "carta",
+    "technology": "tecnología",
+    "technological": "tecnológico",
+    "machine": "máquina",
+    "machines": "máquinas",
+    "machinery": "maquinaria",
+    "the Machine": "la Máquina",
+    "industry": "industria",
+    "industrial": "industrial",
+    "industrialism": "industrialismo",
+    "mass": "masa",
+    "masses": "masas",
+    "the masses": "las masas",
+    "civilization": "civilización",
+    "modernity": "modernidad",
+    "modern": "moderno",
+    "tradition": "tradición",
+    "traditional": "tradicional",
+    "culture": "cultura",
+    "cultural": "cultural",
+    # ─── Filosofía / metafísica ───
+    "nature": "naturaleza",
+    "natural": "natural",
+    "the organic": "lo orgánico",
+    "the inorganic": "lo inorgánico",
+    "organism": "organismo",
+    "form": "forma",
+    "Gestalt": "Gestalt",
+    "structure": "estructura",
+    "abstraction": "abstracción",
+    "abstract": "abstracto",
+    "concrete": "concreto",
+    "consciousness": "conciencia",
+    "self-consciousness": "autoconciencia",
+    "reality": "realidad",
+    "real": "real",
+    "existence": "existencia",
+    "being": "ser",
+    "essence": "esencia",
+    "becoming": "devenir",
+    "humanity": "humanidad",
+    "the human": "lo humano",
+    "human being": "ser humano",
+    "human beings": "seres humanos",
+    "the earth": "la tierra",
+    "the world": "el mundo",
+    "world": "mundo",
+    "spirit": "espíritu",
+    "spiritual": "espiritual",
+    "soul": "alma",
+    "mind": "mente",
+    "intellect": "intelecto",
+    "intellectual": "intelectual",
+    "reason": "razón",
+    "rational": "racional",
+    "will": "voluntad",
+    "freedom": "libertad",
+    "personhood": "carácter de persona",
+    "the person": "la persona",
+    "personality": "personalidad",
+    "individuality": "individualidad",
+    "individual": "individuo",
+    "subject": "sujeto",
+    "object": "objeto",
+    "subjective": "subjetivo",
+    "objective": "objetivo",
+    # ─── Estética y experiencia ───
+    "beauty": "belleza",
+    "beautiful": "hermoso",
+    "image": "imagen",
+    "vision": "visión",
+    "experience": "experiencia",
+    "feeling": "sentimiento",
+    "sensibility": "sensibilidad",
+    "perception": "percepción",
+    "intuition": "intuición",
+    "wholeness": "totalidad",
+    "the whole": "el todo",
+    "harmony": "armonía",
+    "rhythm": "ritmo",
+    # ─── Acción / dominio ───
+    "mastery": "dominio",
+    "domination": "dominación",
+    "power": "poder",
+    "force": "fuerza",
+    "action": "acción",
+    "activity": "actividad",
+    "work": "trabajo",
+    "labor": "trabajo",
+    "task": "tarea",
+    # ─── Teología / Ressourcement ───
+    "Catholic": "católico",
+    "Catholicism": "catolicismo",
+    "Christian": "cristiano",
+    "Christianity": "cristianismo",
+    "God": "Dios",
+    "the divine": "lo divino",
+    "providence": "providencia",
+    "grace": "gracia",
+    "creation": "creación",
+    "creature": "criatura",
+    "Church": "Iglesia",
+    "the Church": "la Iglesia",
+    "faith": "fe",
+    "Ressourcement": "Ressourcement",
+    "Eerdmans": "Eerdmans",
+    # ─── Términos alemanes que SE MANTIENEN en alemán ───
+    "Lebensgefühl": "Lebensgefühl",
+    "Weltanschauung": "Weltanschauung",
+    "Bildung": "Bildung",
+    "Schildgenossen": "Schildgenossen",
+    "Kultur": "Kultur",
+    "Volk": "Volk",
+    "Geist": "Geist",
+    # ─── Topónimos italianos / europeos ───
+    "Italy": "Italia",
+    "Italian": "italiano",
+    "Italians": "italianos",
+    "Germany": "Alemania",
+    "German": "alemán",
+    "Germans": "alemanes",
+    "Switzerland": "Suiza",
+    "Swiss": "suizo",
+    "Brescia": "Brescia",
+    "Verona": "Verona",
+    "Milan": "Milán",
+    "Florence": "Florencia",
+    "Rome": "Roma",
+    "the Alps": "los Alpes",
+    "the Mediterranean": "el Mediterráneo",
+    # ─── Personas — NO traducir ───
+    "Romano Guardini": "Romano Guardini",
+    "Guardini": "Guardini",
+    "Louis Dupré": "Louis Dupré",
+    "Dupré": "Dupré",
+    "Geoffrey Bromiley": "Geoffrey Bromiley",
+    "Bromiley": "Bromiley",
+    "Goethe": "Goethe",
+    "Schiller": "Schiller",
+    "Hegel": "Hegel",
+    "Kant": "Kant",
+    "Nietzsche": "Nietzsche",
+    "Heidegger": "Heidegger",
+    # ─── Vocabulario de cartas ───
+    "I have": "he",
+    "I had": "había",
+    "you and I": "tú y yo",
+    "we": "nosotros",
+}
+
+SYSTEM_PROMPT_LAKE_COMO = """Eres un traductor literario profesional especializado en filosofía continental, teología católica y ensayismo cultural alemán. Traduces del inglés al español neutro (lector culto), preservando el vuelo metafísico del original.
+
+Este libro es "Letters from Lake Como: Explorations in Technology and the Human Race" de Romano Guardini (1885-1968), traducido del alemán "Briefe vom Comer See" (1923, 1927) por Geoffrey Bromiley, con introducción de Louis Dupré, en la serie Ressourcement de Eerdmans (1994). Es una colección de nueve cartas filosófico-teológicas escritas en el norte de Italia, donde Guardini —teólogo italo-alemán, sacerdote católico, una de las figuras intelectuales más finas del siglo XX— reflexiona sobre el impacto de la técnica sobre la naturaleza, la cultura y el ser humano. Es prosa contemplativa, de gran densidad conceptual, escrita en tono íntimo y meditativo (a un amigo).
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas. NO los modifiques. NO los elimines. NO los reordenes.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <p>, <h1>-<h6>, <div>, <a>, <i>, <em>, <span>, etc. Mismos atributos (class, id, href, lang), mismas cantidades, mismo orden. El libro tiene mucho `<div class="calibre1">` y `<p class="cl-1p-v">` o similares — preservalos exactos.
+
+3. APERTURA DE CADA CARTA:
+   - "Dear Friend," → "Querido amigo:" (con dos puntos, no coma).
+   - El registro es íntimo pero sustantivo: Guardini escribe a un destinatario singular, culto, con quien comparte una conversación filosófica continua.
+
+4. CONCEPTO CENTRAL — TECNOLOGÍA Y NATURALEZA:
+   - "technology" → "tecnología" SIEMPRE (no "técnica" salvo cuando el original dice "technique").
+   - "the machine" → "la máquina"; "machinery" → "maquinaria"; "industry" → "industria".
+   - "nature" → "naturaleza"; "the organic"/"the inorganic" → "lo orgánico"/"lo inorgánico".
+   - "form" → "forma" (concepto morfológico fuerte en Guardini, no "format").
+   - "Gestalt" si aparece en alemán → SE MANTIENE en alemán.
+   - "the masses" → "las masas" (concepto crítico de la modernidad).
+
+5. VOCABULARIO METAFÍSICO — traducciones consagradas:
+   - "being" → "ser"; "essence" → "esencia"; "existence" → "existencia"; "becoming" → "devenir".
+   - "consciousness" → "conciencia"; "soul" → "alma"; "spirit" → "espíritu" (cuidado: "spirit" puede ser "Geist" alemán, mantener "espíritu" salvo contexto teológico que pida "Espíritu Santo").
+   - "the human"/"humanity" → "lo humano"/"humanidad"; "person" → "persona"; "individual" → "individuo".
+   - "subject"/"object" → "sujeto"/"objeto"; "wholeness"/"the whole" → "totalidad"/"el todo".
+
+6. VOCABULARIO TEOLÓGICO (Ressourcement):
+   - "God" → "Dios"; "the divine" → "lo divino"; "grace" → "gracia"; "providence" → "providencia"; "creation"/"creature" → "creación"/"criatura"; "Church" → "Iglesia".
+   - "Catholic" → "católico"; "Christianity" → "cristianismo"; "faith" → "fe".
+   - "Ressourcement" → SE MANTIENE en francés (es el nombre de la serie y del movimiento teológico).
+
+7. NOMBRES PROPIOS:
+   - Personas (Guardini, Dupré, Bromiley, Goethe, Schiller, Hegel, Kant, Nietzsche, Heidegger) → NO traducir.
+   - "Eerdmans", "Schildgenossen" (revista alemana original) → NO traducir.
+
+8. TOPÓNIMOS — exónimos españoles:
+   - "Lake Como" → "lago de Como" (en cuerpo); "Como" solo cuando se refiere al pueblo o al lago elíptico.
+   - "Italy/Italian" → "Italia/italiano"; "Germany/German" → "Alemania/alemán"; "Florence" → "Florencia"; "Milan" → "Milán"; "Rome" → "Roma".
+   - Sin exónimo asentado → mantener original (Brescia, Verona).
+
+9. PALABRAS ALEMANAS que aparecen en el original inglés:
+   - "Lebensgefühl", "Weltanschauung", "Bildung", "Volk", "Geist", "Kultur" → SE MANTIENEN en alemán (son conceptos filosóficos sin equivalencia exacta). Si están entre <i> o <em>, conservar tags.
+
+10. ESPAÑOL NEUTRO LATINOAMERICANO, lector culto:
+    - "tú" como segunda persona singular (Guardini se dirige a su amigo con "you" = "tú", no "usted" salvo registro muy formal).
+    - Sin modismos regionales (chévere, bacán, guay, chido, mola — NINGUNO).
+    - Sin conjugaciones peninsulares (vosotros tenéis, habríais — NO).
+    - Registro: meditativo, sustantivo, ligeramente arcaizante (estamos en 1923). Permite oraciones largas y subordinadas — Guardini escribe así, herencia del idealismo alemán.
+
+11. TONO DE GUARDINI — CRÍTICO:
+    - Voz íntima ("I", "you", "we") preservada.
+    - Contemplativo. Comienza con descripciones sensoriales (paisaje, recuerdo) y asciende a la reflexión metafísica.
+    - Sin caer en el panfleto: Guardini critica la técnica pero no la rechaza con resentimiento. Hay melancolía y lucidez, no rabia.
+    - Frases que son aforismos breves se respetan en su brevedad. Frases largas con cláusulas se respetan en su largura.
+    - Cita poetas y filósofos alemanes con familiaridad. Si menciona a Goethe, Schiller, etc., son referencias directas.
+
+12. EJEMPLOS DE INICIOS DE PÁRRAFOS COMUNES (traducir consistentemente):
+    - "I have come to recognize" → "He llegado a reconocer".
+    - "I will pursue" → "Continuaré".
+    - "Let me draw your attention" → "Permíteme llamar tu atención".
+    - "It seems to me" → "Me parece".
+    - "We have sailed" → "Hemos navegado".
+    - "I detect in your letter" → "Percibo en tu carta".
+
+13. NÚMEROS, FECHAS, MEDIDAS:
+    - Fechas: "March 14, 1923" → "14 de marzo de 1923".
+    - Siglos: "the nineteenth century" → "el siglo XIX" (números romanos).
+    - Distancias: si el original usa millas, dejar millas; si pies, pies. (No convertir a sistema métrico salvo que el original lo haga.)
+
+14. TÍTULOS DE OBRAS Y PUBLICACIONES (libros, revistas, ensayos): se mantienen en idioma original. Si están entre <i> o <em>, conservar tags. La revista "Schildgenossen" donde se publicaron originalmente las cartas: NO traducir.
+
+15. NO expliques, NO resumas, NO agregues notas del traductor.
+
+16. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_LAKE_COMO = [
+    r"^titlepage\.xhtml$",  # solo cover/css
+]
+
+# Perfil "power_of_language" — Viorica Marian / Dutton (Penguin Random House, 2023)
+# Ensayo divulgativo sobre psicolingüística, bilingüismo y neurociencia del lenguaje.
+# Marian es psicolingüista de Northwestern; libro accesible pero técnico.
+GLOSSARY_POWER_OF_LANGUAGE: dict[str, str] = {
+    # ─── Núcleo del libro: lenguaje y multilingüismo ───
+    "language": "lengua",
+    "languages": "lenguas",
+    "the language": "la lengua",
+    "multilingual": "multilingüe",
+    "multilinguals": "multilingües",
+    "multilingualism": "multilingüismo",
+    "bilingual": "bilingüe",
+    "bilinguals": "bilingües",
+    "bilingualism": "bilingüismo",
+    "monolingual": "monolingüe",
+    "monolinguals": "monolingües",
+    "monolingualism": "monolingüismo",
+    "trilingual": "trilingüe",
+    "polyglot": "políglota",
+    "native speaker": "hablante nativo",
+    "native language": "lengua materna",
+    "mother tongue": "lengua materna",
+    "second language": "segunda lengua",
+    "foreign language": "lengua extranjera",
+    "heritage language": "lengua de herencia",
+    "first language": "primera lengua",
+    "L1": "L1",
+    "L2": "L2",
+    "code": "código",
+    "codes": "códigos",
+    "code switching": "alternancia de código",
+    "code-switching": "alternancia de código",
+    "language pair": "par de lenguas",
+    "language acquisition": "adquisición del lenguaje",
+    "language learning": "aprendizaje de lenguas",
+    "language processing": "procesamiento del lenguaje",
+    "language use": "uso del lenguaje",
+    "speaker": "hablante",
+    "speakers": "hablantes",
+    "speech": "habla",
+    "listener": "oyente",
+    "listening": "escucha",
+    # ─── Lingüística ───
+    "linguistics": "lingüística",
+    "linguist": "lingüista",
+    "linguistic": "lingüístico",
+    "psycholinguistics": "psicolingüística",
+    "psycholinguistic": "psicolingüístico",
+    "neurolinguistics": "neurolingüística",
+    "sociolinguistics": "sociolingüística",
+    "applied linguistics": "lingüística aplicada",
+    "word": "palabra",
+    "words": "palabras",
+    "vocabulary": "vocabulario",
+    "lexicon": "léxico",
+    "lexical": "léxico",
+    "meaning": "significado",
+    "semantic": "semántico",
+    "semantics": "semántica",
+    "syntax": "sintaxis",
+    "syntactic": "sintáctico",
+    "grammar": "gramática",
+    "grammatical": "gramatical",
+    "phonology": "fonología",
+    "phonological": "fonológico",
+    "phoneme": "fonema",
+    "morpheme": "morfema",
+    "morphology": "morfología",
+    "morphological": "morfológico",
+    "pronunciation": "pronunciación",
+    "accent": "acento",
+    "accents": "acentos",
+    "dialect": "dialecto",
+    "dialects": "dialectos",
+    "writing": "escritura",
+    "reading": "lectura",
+    "script": "sistema de escritura",
+    "alphabet": "alfabeto",
+    "alphabetic": "alfabético",
+    "character": "carácter",
+    "characters": "caracteres",
+    "logographic": "logográfico",
+    "syllable": "sílaba",
+    "syllabic": "silábico",
+    # ─── Idiomas mencionados (traducción estándar) ───
+    "English": "inglés",
+    "Spanish": "español",
+    "French": "francés",
+    "German": "alemán",
+    "Italian": "italiano",
+    "Portuguese": "portugués",
+    "Mandarin": "mandarín",
+    "Cantonese": "cantonés",
+    "Chinese": "chino",
+    "Japanese": "japonés",
+    "Korean": "coreano",
+    "Russian": "ruso",
+    "Hindi": "hindi",
+    "Arabic": "árabe",
+    "Hebrew": "hebreo",
+    "Romanian": "rumano",
+    "Dutch": "neerlandés",
+    "Swedish": "sueco",
+    "Norwegian": "noruego",
+    "Danish": "danés",
+    "Finnish": "finés",
+    "Greek": "griego",
+    "Latin": "latín",
+    "Turkish": "turco",
+    "Vietnamese": "vietnamita",
+    "Thai": "tailandés",
+    "Polish": "polaco",
+    "Czech": "checo",
+    # ─── Cognición y neurociencia ───
+    "brain": "cerebro",
+    "mind": "mente",
+    "the mind": "la mente",
+    "cognition": "cognición",
+    "cognitive": "cognitivo",
+    "cognitive science": "ciencia cognitiva",
+    "neuroscience": "neurociencia",
+    "neural": "neuronal",
+    "neuron": "neurona",
+    "neurons": "neuronas",
+    "neuroplasticity": "neuroplasticidad",
+    "memory": "memoria",
+    "working memory": "memoria de trabajo",
+    "long-term memory": "memoria a largo plazo",
+    "short-term memory": "memoria a corto plazo",
+    "attention": "atención",
+    "perception": "percepción",
+    "emotion": "emoción",
+    "emotional": "emocional",
+    "thought": "pensamiento",
+    "thinking": "pensamiento",
+    "consciousness": "conciencia",
+    "executive function": "función ejecutiva",
+    "executive control": "control ejecutivo",
+    "inhibitory control": "control inhibitorio",
+    "task switching": "cambio de tarea",
+    "creativity": "creatividad",
+    "creative": "creativo",
+    "empathy": "empatía",
+    "decision-making": "toma de decisiones",
+    "decision making": "toma de decisiones",
+    "metacognition": "metacognición",
+    "metalinguistic": "metalingüístico",
+    # ─── Investigación científica ───
+    "experiment": "experimento",
+    "experiments": "experimentos",
+    "experimental": "experimental",
+    "study": "estudio",
+    "studies": "estudios",
+    "research": "investigación",
+    "researcher": "investigador",
+    "researchers": "investigadores",
+    "participant": "participante",
+    "participants": "participantes",
+    "subject": "sujeto",
+    "subjects": "sujetos",
+    "control group": "grupo de control",
+    "data": "datos",
+    "evidence": "evidencia",
+    "findings": "hallazgos",
+    "results": "resultados",
+    "hypothesis": "hipótesis",
+    "theory": "teoría",
+    "stimulus": "estímulo",
+    "stimuli": "estímulos",
+    "task": "tarea",
+    "trial": "ensayo",
+    "trials": "ensayos",
+    # ─── Personas e instituciones — NO traducir ───
+    "Viorica Marian": "Viorica Marian",
+    "Marian": "Marian",
+    "Northwestern University": "Universidad Northwestern",
+    "Northwestern": "Northwestern",
+    "Penguin Random House": "Penguin Random House",
+    "Dutton": "Dutton",
+    "MIT": "MIT",
+    "Harvard": "Harvard",
+    "Stanford": "Stanford",
+    "Primo Levi": "Primo Levi",
+    "Charlemagne": "Carlomagno",
+    "Chomsky": "Chomsky",
+    "Noam Chomsky": "Noam Chomsky",
+    # ─── Topónimos ───
+    "New York": "Nueva York",
+    "Washington": "Washington",
+    "United States": "Estados Unidos",
+    "America": "Estados Unidos",
+    "Europe": "Europa",
+    "European": "europeo",
+    "Japan": "Japón",
+    "China": "China",
+    "Russia": "Rusia",
+    "Germany": "Alemania",
+    "France": "Francia",
+    "Italy": "Italia",
+    "Romania": "Rumanía",
+    "Mexico": "México",
+    "Pearl Harbor": "Pearl Harbor",
+}
+
+SYSTEM_PROMPT_POWER_OF_LANGUAGE = """Eres un traductor literario profesional especializado en divulgación científica sobre psicolingüística y neurociencia. Traduces del inglés al español neutro (lector culto pero no especialista).
+
+Este libro es "The Power of Language: How the Codes We Use to Think, Speak, and Live Transform Our Minds" de Viorica Marian (Dutton/Penguin Random House, 2023). Marian es psicolingüista de Northwestern University, originaria de Rumanía, multilingüe (rumano, ruso, inglés). El libro explora cómo el bilingüismo y multilingüismo transforman la cognición. Es divulgación rigurosa: estudios científicos explicados con calidez y ejemplos personales, en primera persona.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_N⟧ son placeholders protegidos. NO los traduzcas, NO los modifiques.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <p>, <i>, <em>, <b>, <strong>, <a href>, <span>, <sup>, <br/>, <blockquote>, <ul>, <li>, etc. Mismos atributos (class, id, href, lang, role, epub:type, aria-label), mismas cantidades, mismo orden.
+
+3. PALABRAS COMO EJEMPLOS LINGÜÍSTICOS — REGLA CRÍTICA:
+   - Cuando una palabra extranjera aparece dentro de <i>...</i> como EJEMPLO LINGÜÍSTICO (rusa, china, japonesa, etc.), NO LA TRADUZCAS. Déjala en su idioma original.
+   - Ejemplo: "<i>marker</i> and the Russian word <i>marka</i> (meaning 'stamp')" → "<i>marker</i> y la palabra rusa <i>marka</i> (que significa 'sello')". Las palabras de ejemplo (marker, marka) NO se traducen porque son los DATOS lingüísticos del libro.
+   - Cuando la palabra inglesa misma es el ejemplo (<i>marker</i>, <i>glove</i>, <i>shark</i>), TAMPOCO la traduzcas — la palabra inglesa misma es el dato.
+   - SÍ traduce las palabras dentro de <i> que son nombres propios genéricos o títulos: <i>Statue of Liberty</i> → <i>Estatua de la Libertad</i> (si tiene exónimo asentado).
+   - Cuando dudes: si la oración trata sobre la palabra COMO palabra (sus letras, sonidos, significado), NO la traduzcas. Si la palabra solo está enfatizada por estilo, sí.
+
+4. CARACTERES CHINOS, JAPONESES, COREANOS, ETC. en <span class="lang_Chinese">, <span class="lang_Japanese">, etc.:
+   - NUNCA traduzcas los caracteres dentro de estos spans. Preserva el span completo con su clase exacta.
+   - Ejemplo: "<span class="lang_Chinese">美国</span>" → mantener IDÉNTICO.
+
+5. NOTAS al final del libro (clase x13-BM-Endnotes):
+   - Estructura: <p class="x13-BM-Endnotes"><b>"keyphrase":</b> Autor, <i>Título</i>, datos editoriales, URL.</p>
+   - El <b>"keyphrase":</b> al inicio es la frase clave del cuerpo del texto. Traduce la keyphrase IGUAL que como aparezca en el cuerpo (consistencia con el ancla).
+   - Las citas bibliográficas que siguen (autor, título en <i>, editorial, año, doi, URL) NO se traducen — quedan en inglés.
+   - <p class="link_to_text">: el texto "GO TO NOTE REFERENCE IN TEXT" → "IR A LA REFERENCIA EN EL TEXTO". El aria-label correspondiente también.
+
+6. TERMINOLOGÍA LINGÜÍSTICA — consistencia obligatoria (respetar glosario):
+   bilingual → bilingüe; multilingual → multilingüe; monolingual → monolingüe; native speaker → hablante nativo; native language/mother tongue → lengua materna; second language → segunda lengua; code switching → alternancia de código; language pair → par de lenguas.
+
+7. NEUROCIENCIA — términos consagrados:
+   brain → cerebro; mind → mente; cognition → cognición; cognitive → cognitivo; working memory → memoria de trabajo; executive function → función ejecutiva; inhibitory control → control inhibitorio; neuroplasticity → neuroplasticidad.
+
+8. NOMBRES DE IDIOMAS — minúscula en español:
+   English → inglés; Spanish → español; Mandarin → mandarín; Russian → ruso; Romanian → rumano; Hebrew → hebreo, etc.
+
+9. NOMBRES PROPIOS — NO traducir:
+   - Personas: Viorica Marian, Noam Chomsky, Primo Levi, etc.
+   - Instituciones: Northwestern University → "Universidad Northwestern"; MIT, Harvard, Stanford → tal cual.
+   - Editoriales: Dutton, Penguin Random House → tal cual.
+   - EXCEPCIÓN españolizar: monarcas históricos, Charlemagne → Carlomagno (en epígrafe), papas.
+
+10. TOPÓNIMOS — exónimos españoles cuando están asentados:
+    New York → Nueva York; United States/America → Estados Unidos; Japan → Japón; Romania → Rumanía; Italy → Italia; Mexico → México. Sin exónimo: Northwestern, Pearl Harbor, Lugouqiao.
+
+11. ESPAÑOL NEUTRO LATINOAMERICANO:
+    - "tú" como segunda persona (Marian se dirige al lector con frecuencia: "you may not realize", "imagine", "consider").
+    - Sin modismos regionales (chévere, bacán, guay, chido, mola).
+    - Sin conjugaciones peninsulares (vosotros tenéis, habríais).
+    - Registro: divulgativo, claro, cálido. Marian cuenta su propia historia (rumana de origen, multilingüe) — preserva la voz personal.
+
+12. TONO DE MARIAN — CRÍTICO:
+    - Voz en primera persona ("I", "we", "my research") — preservar.
+    - Combina ciencia rigurosa con anécdotas. Mantén ambos registros.
+    - Cuando explica un concepto técnico, lo introduce con calidez: "Imagine", "Picture this", "Consider". Traduce con el mismo tono invitatorio.
+    - Frases largas con datos científicos se respetan en su largura.
+
+13. NÚMEROS, FECHAS, MEDIDAS:
+    - Fechas: "March 14, 2023" → "14 de marzo de 2023".
+    - Siglos: "the twenty-first century" → "el siglo XXI" (romanos).
+    - Porcentajes y cifras: respetar formato original.
+
+14. TÍTULOS DE OBRAS Y PUBLICACIONES (libros, revistas, papers): NO traducir. Si están en <i>/<em>, conservar tags. Ejemplo: <i>The New Yorker</i> queda igual.
+
+15. NO expliques, NO resumas, NO agregues notas del traductor.
+
+16. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_POWER_OF_LANGUAGE = [
+    r"^01_Cover\.xhtml$",
+    r"^02_Intro_Page\.xhtml$",
+    r"^03_Title_Page\.xhtml$",
+    r"^26_Index\.xhtml$",        # 165 KB, 805 entradas alfabéticas — no traducir
+    r"_nav\.xhtml$",             # auto-generado
+]
+
 PROFILES = {
     "generic": {
         "glossary": GLOSSARY_GENERIC,
@@ -879,6 +2499,31 @@ PROFILES = {
         "glossary": GLOSSARY_PRACTICAL_SQL,
         "system_prompt": SYSTEM_PROMPT_PRACTICAL_SQL,
         "skip_patterns": SKIP_PATTERNS_PRACTICAL_SQL,
+    },
+    "bismarck": {
+        "glossary": GLOSSARY_BISMARCK,
+        "system_prompt": SYSTEM_PROMPT_BISMARCK,
+        "skip_patterns": SKIP_PATTERNS_BISMARCK,
+    },
+    "slow_looking": {
+        "glossary": GLOSSARY_SLOW_LOOKING,
+        "system_prompt": SYSTEM_PROMPT_SLOW_LOOKING,
+        "skip_patterns": SKIP_PATTERNS_SLOW_LOOKING,
+    },
+    "the_score": {
+        "glossary": GLOSSARY_THE_SCORE,
+        "system_prompt": SYSTEM_PROMPT_THE_SCORE,
+        "skip_patterns": SKIP_PATTERNS_THE_SCORE,
+    },
+    "lake_como": {
+        "glossary": GLOSSARY_LAKE_COMO,
+        "system_prompt": SYSTEM_PROMPT_LAKE_COMO,
+        "skip_patterns": SKIP_PATTERNS_LAKE_COMO,
+    },
+    "power_of_language": {
+        "glossary": GLOSSARY_POWER_OF_LANGUAGE,
+        "system_prompt": SYSTEM_PROMPT_POWER_OF_LANGUAGE,
+        "skip_patterns": SKIP_PATTERNS_POWER_OF_LANGUAGE,
     },
 }
 
@@ -1066,22 +2711,53 @@ def extract_translatable_blocks(soup: BeautifulSoup) -> list[tuple[Any, str]]:
 # ─── Tokenización opaca de contenido técnico ────────────────────────────────
 
 OPAQUE_TAGS = {"code", "math", "svg"}
+# Tags atómicos sin contenido traducible: tokenizarlos evita que el modelo
+# pierda atributos al copiar HTML denso (id, title, epub:type, src, alt...).
+ATOMIC_OPAQUE_TAGS = {"br", "img"}
 OPAQUE_TOKEN_RE = re.compile(r"⟦OPAQUE_(\d+)⟧")
 
 
 def tokenize_opaque(html_str: str) -> tuple[str, dict[str, str]]:
     """
-    Reemplaza <code>, <math>, <svg> por tokens ⟦OPAQUE_N⟧.
+    Reemplaza por tokens ⟦OPAQUE_N⟧:
+      1) Contenido técnico: <code>, <math>, <svg>.
+      2) Tags atómicos: <br/>, <img/>.
+      3) Anchors de página epub: <span epub:type="pagebreak" .../>.
     Devuelve (html_tokenizado, dict_de_restauración).
     """
     soup = BeautifulSoup(html_str, "html.parser")
     tokens: dict[str, str] = {}
     counter = 0
+
+    # 1) Tags técnicos con contenido protegido
     for tag in soup.find_all(list(OPAQUE_TAGS)):
         counter += 1
         token = f"⟦OPAQUE_{counter}⟧"
         tokens[token] = str(tag)
         tag.replace_with(NavigableString(token))
+
+    # 2) Tags atómicos por nombre (br, img)
+    for tag in soup.find_all(list(ATOMIC_OPAQUE_TAGS)):
+        counter += 1
+        token = f"⟦OPAQUE_{counter}⟧"
+        tokens[token] = str(tag)
+        tag.replace_with(NavigableString(token))
+
+    # 3) Anchors de página: <span epub:type="pagebreak" id="..." title="..."/>
+    #    BeautifulSoup html.parser no parsea ":" en nombres de atributo, así que
+    #    buscamos por todos los <span> con cualquier atributo que matchee.
+    for tag in list(soup.find_all("span")):
+        attrs = tag.attrs or {}
+        is_pagebreak = (
+            attrs.get("epub:type") == "pagebreak"
+            or attrs.get("epub-type") == "pagebreak"  # fallback si el parser cambia ":"
+        )
+        if is_pagebreak and not tag.get_text(strip=True):
+            counter += 1
+            token = f"⟦OPAQUE_{counter}⟧"
+            tokens[token] = str(tag)
+            tag.replace_with(NavigableString(token))
+
     return str(soup), tokens
 
 
@@ -1116,9 +2792,18 @@ def tag_signature(html: str) -> tuple:
 
 
 def is_xml_wellformed(html: str) -> bool:
-    """Parsea el fragmento como XML estricto. Atrapa atributos rotos (E999 Kindle)."""
+    """Parsea el fragmento como XML estricto. Atrapa atributos rotos (E999 Kindle).
+
+    Declara los namespaces que aparecen en epubs (xhtml, epub:) para evitar
+    falsos negativos por atributos como `epub:type="pagebreak"`."""
     try:
-        wrapped = f'<root xmlns="http://www.w3.org/1999/xhtml">{html}</root>'
+        wrapped = (
+            '<root '
+            'xmlns="http://www.w3.org/1999/xhtml" '
+            'xmlns:epub="http://www.idpf.org/2007/ops" '
+            'xmlns:xml="http://www.w3.org/XML/1998/namespace">'
+            f'{html}</root>'
+        )
         etree.fromstring(wrapped.encode("utf-8"))
         return True
     except etree.XMLSyntaxError:
@@ -1548,5 +3233,29 @@ async def main() -> None:
     print("  Verificá el resultado y después podés borrar ./work y ./progress.json.")
 
 
+def _start_caffeinate() -> "subprocess.Popen | None":
+    """En macOS: previene que la Mac se duerma mientras el script corre.
+    El proceso de caffeinate muere automáticamente cuando este script termina."""
+    if sys.platform != "darwin":
+        return None
+    if shutil.which("caffeinate") is None:
+        return None
+    try:
+        proc = subprocess.Popen(
+            ["caffeinate", "-i", "-s", "-w", str(os.getpid())],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        # Garantizar limpieza si el script muere de forma rara
+        import atexit
+        atexit.register(lambda: proc.terminate() if proc.poll() is None else None)
+        print(f"☕ caffeinate activo (PID {proc.pid}) — la Mac no se dormirá hasta que termine la traducción")
+        return proc
+    except Exception as e:
+        print(f"⚠ no se pudo activar caffeinate: {e}")
+        return None
+
+
 if __name__ == "__main__":
+    _start_caffeinate()
     asyncio.run(main())

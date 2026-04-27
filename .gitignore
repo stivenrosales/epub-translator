@@ -1,26 +1,36 @@
-# Source and translated books (copyrighted content)
+# ─── Source / translated books (copyrighted content) ─────
 *.epub
 *.epub.bak
 *.azw3
 *.kpf
 *-conversionLog.csv
 
-# Working directory (extracted epub contents)
+# ─── Working state (generated at runtime) ────────────────
 work/
-
-# Translation progress state
+work_*/
 progress.json
 progress_*.json
-translate.log
 
-# Python virtual environment
+# ─── Logs ────────────────────────────────────────────────
+*.log
+
+# ─── Translation pipeline temp artifacts ─────────────────
+chunk_*.json
+translated_chunk_*.json
+translated_chunk_*.json.broken
+translated_*.json
+to_translate*.json
+verses.json
+
+# ─── Python ──────────────────────────────────────────────
 .venv/
+venv/
 __pycache__/
 *.pyc
+*.pyo
 
-# macOS
+# ─── macOS / Editor ──────────────────────────────────────
 .DS_Store
-
-# IDE
 .idea/
 .vscode/
+.claude/

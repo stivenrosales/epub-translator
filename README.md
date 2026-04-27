@@ -47,15 +47,27 @@ Una herramienta CLI que traduce libros EPUB completos usando **Claude Sonnet** a
 
 ## 📋 Perfiles disponibles
 
+### Técnicos / divulgación tecnológica
+
 | Perfil | Editorial | Tipo de libro | Ejemplo |
 |--------|-----------|---------------|---------|
 | `generic` | Penguin, HarperCollins, etc. | No-ficción, negocios, creatividad | *The Practice* — Seth Godin |
 | `ai_engineering` | O'Reilly | Técnico con código, math y terminología ML | *AI Engineering* — Chip Huyen |
 | `grokking_algorithms` | Manning | CS ilustrado con código Python | *Grokking Algorithms* — Aditya Bhargava |
-| `superagency` | Simon & Schuster | Ensayo sobre AI y sociedad | *Superagency* — Reid Hoffman |
 | `practical_sql` | No Starch Press | Técnico con SQL y análisis de datos | *Practical SQL* — Anthony DeBarros |
 
-Cada perfil incluye su propio **glosario de términos**, **system prompt** adaptado al tono del autor, y **patrones de archivos a saltar**.
+### Ensayo, biografía y filosofía
+
+| Perfil | Editorial | Tipo de libro | Ejemplo |
+|--------|-----------|---------------|---------|
+| `superagency` | Authors Equity | Ensayo sobre IA y sociedad | *Superagency* — Reid Hoffman |
+| `bismarck` | Oxford University Press | Biografía histórica académica | *Bismarck: A Life* — Jonathan Steinberg |
+| `slow_looking` | Routledge | Educación + arte + ciencia (Project Zero) | *Slow Looking* — Shari Tishman |
+| `the_score` | Penguin / Dutton | Filosofía social, juegos y métricas | *The Score* — C. Thi Nguyen |
+| `lake_como` | Eerdmans (Ressourcement) | Filosofía-teología sobre técnica y naturaleza | *Letters from Lake Como* — Romano Guardini |
+| `power_of_language` | Penguin / Dutton | Psicolingüística y bilingüismo | *The Power of Language* — Viorica Marian |
+
+Cada perfil incluye su propio **glosario de términos** (a veces de varios cientos), **system prompt** adaptado al tono del autor, y **patrones de archivos a saltar** (por ej. índices alfabéticos masivos que no aportan valor traducidos).
 
 ---
 
@@ -114,8 +126,22 @@ python3 translate_epub.py
 Editar `translate_epub.py` y cambiar:
 
 ```python
-FORCE_PROFILE = "grokking_algorithms"  # o "generic", "ai_engineering", "superagency", "practical_sql"
+FORCE_PROFILE = "the_score"  # cualquiera de los 10 perfiles disponibles
 ```
+
+### Dashboard en vivo (read-only)
+
+En otra terminal, mientras corre la traducción:
+
+```bash
+python3 dashboard.py
+```
+
+Muestra un panel TUI con `rich`: barra de progreso global con ETA real (calculado por throughput observado, no el inflado de `tqdm`), conteos `done`/`partial`/`pending`/`skipped` por archivo, eventos recientes con timestamps (warns, errores, fases de cierre), y estado del log y `progress.json`. **Read-only**: ábrelo y ciérralo cuando quieras, no afecta la traducción. `Ctrl+C` cierra solo el dashboard. Auto-detecta el `translate*.log` más reciente.
+
+### Mantener la Mac despierta automáticamente
+
+En macOS, `translate_epub.py` lanza `caffeinate -i -s -w PID` al inicio para evitar que la máquina se duerma durante traducciones largas. El proceso se cierra solo cuando termina el script. Si estás en Linux/Windows, no se hace nada (silencioso).
 
 ---
 
@@ -188,9 +214,9 @@ flowchart LR
 | **1. Extraer** | Descomprime el EPUB en `work/` |
 | **2. Detectar perfil** | Escanea patrones de markup (Manning vs O'Reilly vs genérico) |
 | **3. Extraer bloques** | Encuentra `<p>`, `<h1>`–`<h6>`, `<li>`, etc. excluyendo subárboles `<pre>`, `<math>`, `<svg>` |
-| **4. Tokenizar** | Reemplaza `<code>`, `<math>`, `<svg>` inline con placeholders `⟦OPAQUE_N⟧` |
+| **4. Tokenizar** | Reemplaza por `⟦OPAQUE_N⟧`: `<code>`, `<math>`, `<svg>`, `<br/>`, `<img/>`, `<span epub:type="pagebreak">` |
 | **5. Traducir** | Envía batches de 25 bloques a Claude Sonnet con contexto rolling y glosario |
-| **6. Validar XML** | `lxml.etree` parsea cada bloque — si rompe un tag, retry |
+| **6. Validar XML** | `lxml.etree` parsea cada bloque (con namespaces `xhtml` y `epub:` declarados) — si rompe un tag, retry |
 | **7. Validar estructura** | Compara firma de tags (nombres, atributos, conteo) entre original y traducción |
 | **8. Restaurar** | Reinserta contenido opaco original en las posiciones de tokens |
 | **9. Sanear Kindle** | Neutraliza `display:none`/`visibility:hidden` en CSS, sincroniza NCX uid |
@@ -232,6 +258,44 @@ Registrá el perfil en el diccionario `PROFILES` y actualizá `detect_book_profi
 | 🎯 Calidad semántica | La validación estructural detecta HTML roto, pero no errores de significado |
 | ⏱️ Rate limits | El batch size y concurrencia están limitados por el Agent SDK |
 | 👁️ Contenido oculto visible | El saneamiento Kindle hace visibles bloques que estaban `display:none` (landmarks, listas de figuras, etc.) — aparecen como secciones extras en el TOC |
+
+---
+
+## 🧪 Lecciones del proyecto
+
+Cada libro reveló algo nuevo sobre cómo traducir EPUBs con LLMs sin perder fidelidad estructural.
+
+### 1. El namespace `epub:` rompía la validación silenciosamente
+
+`is_xml_wellformed()` envolvía cada fragmento con `xmlns="…/xhtml"` pero **no declaraba `xmlns:epub`**. Resultado: cualquier bloque con `<span epub:type="pagebreak"/>` fallaba la validación XML aunque estuviera bien traducido. Era el villano oculto detrás de muchos rechazos. **Fix**: declarar también `xmlns:epub` y `xmlns:xml` en el wrapper. Eso solo bajó el ratio de errores en libros con paginación rica de ~12 % a ~1 %.
+
+### 2. Tokenización extendida a elementos atómicos
+
+Pedirle al modelo que copie literalmente `<span epub:type="pagebreak" id="page_42" title="42"/>` (56 caracteres con tres atributos) era una invitación al error. La solución no era un prompt más detallado: era hacer que el modelo **no vea ese HTML**. Agregamos `<br/>`, `<img/>` y `<span epub:type="pagebreak"/>` al pool de tokens opacos `⟦OPAQUE_N⟧`. El modelo ve un placeholder de 11 caracteres y lo reproduce sin alterar atributos. Determinístico, cero riesgo nuevo.
+
+### 3. Prompts concisos > prompts detallados
+
+Cuando un libro empezó a fallar, la tentación era agregar más reglas al system prompt. Empíricamente: **a más reglas, peor resultado**. Pasar de 6.5k a 9.2k caracteres de prompt **dobló la tasa de errores**. Sonnet rinde mejor con instrucciones cortas y enfáticas en lo crítico. La regla de los 22 nombres de clase CSS específicos es atención mal gastada — preferí confiar en la regla genérica "preserva todos los tags y atributos".
+
+### 4. Skip masivo > traducir todo
+
+El índice analítico (`<index>`) de un libro académico puede ocupar el 30-40% del peso del epub y aportar valor cero al lector hispanohablante (que busca con `Cmd+F` por texto, no por entradas alfabéticas en inglés). Skipearlo ahorra cuota Max y elimina cientos de bloques candidatos a errores estructurales.
+
+### 5. Retry quirúrgico paralelo para fallos masivos
+
+Cuando un libro queda con 100+ bloques en inglés (porque su markup era especialmente denso, ej. *Slow Looking*), la solución más eficiente es **dividir los bloques en chunks balanceados y lanzar varios subagentes Sonnet en paralelo** (un Agent tool con 5 invocaciones simultáneas). Cada uno devuelve un JSON con `inner_es`. Los pegas con un merge robusto por `(archivo, idx)` que ignora bloques "extras" que algunos modelos inventan, y aplicas un mini-retry final para los que falten.
+
+### 6. `json-repair` como red de seguridad
+
+Sonnet a veces escribe JSON con comillas dobles sin escapar dentro de strings (`"miren..."` en vez de `\"miren...\"`). Antes de fallar el pipeline entero, pasa el output por [`json-repair`](https://github.com/mangiucugna/json_repair) — repara casos comunes y permite continuar.
+
+### 7. Versos y citas poéticas: bilingüe en línea
+
+Para los 24 versos de *The Power of Language* implementé un patrón que respeta la voz original sin sacrificar la lectura: **el verso original arriba con su clase CSS intacta, y debajo la traducción del modelo en cursiva atenuada** (`opacity: 0.75`). El lector ve ambos; los lectores epub respetan el inline style.
+
+### 8. Pre-análisis estructural antes de armar el perfil
+
+Llegué a esto **después** de fallar con *Slow Looking* (asumí markup similar a Bismarck y me equivoqué). Antes de crear el glosario o el system prompt, conviene contar `<i>/<p>`, `pagebreaks`, `<br/>` agrupados, clases CSS dominantes y mirar samples de cada tipo de archivo. Diez minutos de análisis ahorran horas de retry.
 
 ---
 
