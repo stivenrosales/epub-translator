@@ -42,6 +42,7 @@ Una herramienta CLI que traduce libros EPUB completos usando **Claude Sonnet** a
 - 💾 **Reanudable** — checkpoint en `progress.json`, si se interrumpe se retoma donde quedó
 - 📦 **EPUB válido** — mimetype primero (sin compresión), `dc:language` correcto, traducción de NCX
 - 📱 **Kindle-ready automático** — saneamiento previo al empaquetado: neutraliza `display:none` (E3013), sincroniza NCX uid ↔ OPF identifier (NCX-001)
+- 📖 **Enriquecimiento opcional** — `enrich_epub.py` incrusta guías de lectura + mapas conceptuales por capítulo, ideal para filosofía y ensayo denso
 
 ---
 
@@ -66,6 +67,15 @@ Una herramienta CLI que traduce libros EPUB completos usando **Claude Sonnet** a
 | `the_score` | Penguin / Dutton | Filosofía social, juegos y métricas | *The Score* — C. Thi Nguyen |
 | `lake_como` | Eerdmans (Ressourcement) | Filosofía-teología sobre técnica y naturaleza | *Letters from Lake Como* — Romano Guardini |
 | `power_of_language` | Penguin / Dutton | Psicolingüística y bilingüismo | *The Power of Language* — Viorica Marian |
+| `dewey_art_experience` | Penguin / Berkley | Estética filosófica pragmatista — terminología anclada en la traducción canónica de **Jordi Claramonte** | *Art as Experience* — John Dewey |
+
+### Psicología, bienestar y comunidad
+
+| Perfil | Editorial | Tipo de libro | Ejemplo |
+|--------|-----------|---------------|---------|
+| `how_to_be_enough` | St. Martin's Essentials | Psicología clínica de divulgación (perfeccionismo) | *How to Be Enough* — Ellen Hendriksen |
+| `art_of_community` | Berrett-Koehler | Liderazgo, comunidad y pertenencia | *The Art of Community* — Charles H. Vogl |
+| `life_in_three_dimensions` | Knopf / Doubleday | Psicología positiva y bienestar | *Life in Three Dimensions* — Shigehiro Oishi |
 
 Cada perfil incluye su propio **glosario de términos** (a veces de varios cientos), **system prompt** adaptado al tono del autor, y **patrones de archivos a saltar** (por ej. índices alfabéticos masivos que no aportan valor traducidos).
 
@@ -126,7 +136,7 @@ python3 translate_epub.py
 Editar `translate_epub.py` y cambiar:
 
 ```python
-FORCE_PROFILE = "the_score"  # cualquiera de los 10 perfiles disponibles
+FORCE_PROFILE = "the_score"  # cualquiera de los 14 perfiles disponibles
 ```
 
 ### Dashboard en vivo (read-only)
@@ -142,6 +152,25 @@ Muestra un panel TUI con `rich`: barra de progreso global con ETA real (calculad
 ### Mantener la Mac despierta automáticamente
 
 En macOS, `translate_epub.py` lanza `caffeinate -i -s -w PID` al inicio para evitar que la máquina se duerma durante traducciones largas. El proceso se cierra solo cuando termina el script. Si estás en Linux/Windows, no se hace nada (silencioso).
+
+---
+
+## 📖 Enriquecimiento: guías de lectura + mapas conceptuales
+
+Para libros densos (filosofía, ensayo), un segundo script **opcional** —`enrich_epub.py`— toma el `_es.epub` **ya traducido** y le incrusta, sin retraducir nada:
+
+- una **guía de lectura** al inicio de cada capítulo: introducción que conecta con lo ya visto + términos clave definidos en lenguaje simple, con analogías cotidianas;
+- un **mapa conceptual HTML/CSS** al comienzo de cada sub-sección (detectada por los ornamentos `* * *` del propio autor).
+
+Claude **no escribe HTML**: devuelve datos estructurados (JSON) y Python los renderiza con una plantilla determinista → XHTML siempre válido para Kindle, con estilos **e-ink** (escala de grises, solo bordes/sangrías, sin flexbox ni grid). Reusa la plomería del traductor (extract / repack / sanitize), corre los capítulos **en paralelo** (asyncio) y es **resumible** (`enrich_progress.json` cachea por capítulo).
+
+```bash
+python3 enrich_epub.py                 # toma el *_es.epub más reciente
+python3 enrich_epub.py --only 3        # solo el capítulo 3 (para probar)
+python3 enrich_epub.py --force         # regenera ignorando la caché
+```
+
+Salida: `<nombre>_es_enriquecido.epub`. Ejemplo real: *Art as Experience* (Dewey) → **14 guías de lectura + 47 mapas conceptuales**, uno por cada sección interna del libro.
 
 ---
 
@@ -296,6 +325,17 @@ Para los 24 versos de *The Power of Language* implementé un patrón que respeta
 ### 8. Pre-análisis estructural antes de armar el perfil
 
 Llegué a esto **después** de fallar con *Slow Looking* (asumí markup similar a Bismarck y me equivoqué). Antes de crear el glosario o el system prompt, conviene contar `<i>/<p>`, `pagebreaks`, `<br/>` agrupados, clases CSS dominantes y mirar samples de cada tipo de archivo. Diez minutos de análisis ahorran horas de retry.
+
+### 9. El `navDoc.xhtml` también necesita traducción — y los batches grandes pierden bloques
+
+Dos hallazgos de *Art as Experience* (Dewey):
+
+- **El índice navegable EPUB3 (`navDoc.xhtml`) quedaba en inglés.** El pipeline solo traducía el `toc.ncx`, no el `nav`. En el Kindle el TOC se veía en inglés aunque el libro estuviera traducido. Fix: traducir también el `navDoc` (en Dewey, de forma determinista con los títulos canónicos ya verificados, sin gastar cuota).
+- **Batches de 25 bloques en capítulos densos provocan respuestas incompletas del SDK** (omite algún `<<<BLOCK N>>>`). El pipeline —correctamente— conserva el inglés antes que inventar, y marca el archivo `partial`. Re-traducir esos archivos con `BATCH_SIZE=8` lo resuelve: **batches chicos = el modelo no se salta bloques.**
+
+### 10. Verificar la terminología contra la traducción publicada, no contra la memoria del modelo
+
+Para *Art as Experience* el glosario se ancló en la traducción canónica de **Jordi Claramonte** (Paidós). El modelo "recordaba" varios términos mal (`the live creature` → *el ser vivo* cuando la edición real dice *la criatura viviente*; `Having an Experience` → *Tener una experiencia* en vez de *Cómo se tiene una experiencia*). La única forma de blindar la terminología fue **leer el PDF real** (incluso escaneado, vía visión) y contrastar término por término. Memoria del modelo ≠ fuente verificada.
 
 ---
 

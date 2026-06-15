@@ -10,6 +10,7 @@ work/
 work_*/
 progress.json
 progress_*.json
+enrich_progress.json
 
 # ─── Logs ────────────────────────────────────────────────
 *.log

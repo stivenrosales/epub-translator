@@ -1,0 +1,92 @@
+/* enrichment.css — estilos para guías de lectura y mapas conceptuales.
+   Diseñado para Kindle e-ink: escala de grises, sin dependencia de color,
+   solo bordes/márgenes/sangrías (sin flexbox ni grid, que fallan en lectores viejos). */
+
+/* ── Guía de lectura ─────────────────────────────────────────────── */
+.guia-lectura {
+  border: 2px solid #000;
+  border-radius: 6px;
+  padding: 0.8em 1em;
+  margin: 1.2em 0 1.6em 0;
+  background: #f4f4f4;
+}
+.guia-titulo {
+  font-weight: bold;
+  font-size: 0.95em;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin: 0 0 0.6em 0;
+  border-bottom: 1px solid #888;
+  padding-bottom: 0.3em;
+}
+.guia-intro {
+  margin: 0 0 0.6em 0;
+  text-align: justify;
+}
+.guia-subtitulo {
+  font-weight: bold;
+  margin: 0.8em 0 0.3em 0;
+}
+.guia-terminos {
+  margin: 0.2em 0 0 0;
+  padding-left: 1.2em;
+  list-style-type: square;
+}
+.guia-terminos li {
+  margin: 0.4em 0;
+}
+.termino-palabra { font-weight: bold; }
+.termino-analogia { font-style: italic; }
+
+/* ── Mapa conceptual ─────────────────────────────────────────────── */
+.mapa-concepto {
+  border: 1px solid #555;
+  border-radius: 6px;
+  padding: 0.8em 1em 1em 1em;
+  margin: 1.4em 0;
+  page-break-inside: avoid;
+}
+.mapa-titulo {
+  text-align: center;
+  font-weight: bold;
+  font-size: 0.9em;
+  letter-spacing: 0.05em;
+  margin: 0 0 0.7em 0;
+  color: #333;
+}
+.mapa-central {
+  border: 2px solid #000;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 0.5em;
+  margin: 0 auto 0.9em auto;
+  background: #e8e8e8;
+}
+.mapa-ramas {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+}
+.mapa-ramas > .rama {
+  border-left: 4px solid #555;
+  padding: 0.3em 0 0.3em 0.7em;
+  margin: 0.6em 0;
+}
+.rama-idea {
+  font-weight: bold;
+}
+.rama-rel {
+  font-style: italic;
+  color: #555;
+  font-size: 0.9em;
+}
+.subnodos {
+  margin: 0.3em 0 0 0;
+  padding-left: 1.2em;
+  list-style-type: circle;
+}
+.subnodos li {
+  margin: 0.15em 0;
+}
