@@ -62,10 +62,10 @@ PROGRESS_FILE = PROJECT_DIR / "progress.json"
 
 MODEL = "claude-sonnet-4-6"   # Último Sonnet. Si da problemas: "claude-sonnet-4-5"
 BATCH_SIZE = 25
-CONCURRENCY = 4
+CONCURRENCY = 6
 
-# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", "bismarck", "slow_looking", o None (auto-detect)
-FORCE_PROFILE: str | None = "power_of_language"
+# Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", "bismarck", "slow_looking", "the_score", "lake_como", "power_of_language", "how_to_be_enough", o None (auto-detect)
+FORCE_PROFILE: str | None = None
 
 # ─── Perfiles de libro ──────────────────────────────────────────────────────
 
@@ -2474,6 +2474,1303 @@ SKIP_PATTERNS_POWER_OF_LANGUAGE = [
     r"_nav\.xhtml$",             # auto-generado
 ]
 
+# ─── Perfil: How to Be Enough (Ellen Hendriksen, St. Martin's Essentials, 2024) ───
+
+GLOSSARY_HOW_TO_BE_ENOUGH: dict[str, str] = {
+    # ─── Núcleo del libro: perfeccionismo ───
+    "perfectionism": "perfeccionismo",
+    "perfectionist": "perfeccionista",
+    "perfectionists": "perfeccionistas",
+    "perfectionistic": "perfeccionista",
+    "self-oriented perfectionism": "perfeccionismo autoorientado",
+    "other-oriented perfectionism": "perfeccionismo orientado a otros",
+    "socially prescribed perfectionism": "perfeccionismo socialmente prescrito",
+    "clinical perfectionism": "perfeccionismo clínico",
+    "adaptive perfectionism": "perfeccionismo adaptativo",
+    "maladaptive perfectionism": "perfeccionismo desadaptativo",
+    "unhelpful perfectionism": "perfeccionismo desadaptativo",
+    "overevaluation": "sobreevaluación",
+    "overevaluate": "sobreevaluar",
+    "high standards": "estándares altos",
+    "demanding standards": "estándares exigentes",
+    "personally demanding standards": "estándares personales exigentes",
+    "hypercritical": "hipercrítico",
+    "Inner Rulebook": "Manual Interno de Reglas",
+    "inner critic": "crítico interior",
+    "inner striver": "esforzado interior",
+    "striver": "esforzado",
+    "strivers": "esforzados",
+    "type A": "tipo A",
+    "Type A": "tipo A",
+    "overdrive": "máxima velocidad",
+    "burnout": "burnout",
+    "burned out": "quemado",
+    "shoulding": "deberías",
+    "should": "debería",
+    "shoulds": "deberías",
+    # ─── Conscientiousness y Big Five ───
+    "conscientiousness": "responsabilidad",
+    "conscientious": "responsable",
+    "Big Five": "los Cinco Grandes",
+    "grit": "grit",
+    "agency": "agencia",
+    "communion": "comunión",
+    # ─── Compasión, vergüenza, autoaceptación ───
+    "self-acceptance": "autoaceptación",
+    "self-compassion": "autocompasión",
+    "self-criticism": "autocrítica",
+    "self-judgment": "autojuicio",
+    "self-blame": "autorreproche",
+    "self-worth": "valor propio",
+    "self-esteem": "autoestima",
+    "self-control": "autocontrol",
+    "self-improvement": "superación personal",
+    "self-care": "autocuidado",
+    "self-help": "autoayuda",
+    "shame": "vergüenza",
+    "ashamed": "avergonzado",
+    "guilt": "culpa",
+    "guilty": "culpable",
+    "envy": "envidia",
+    "jealousy": "celos",
+    "vulnerability": "vulnerabilidad",
+    "vulnerable": "vulnerable",
+    "belonging": "pertenencia",
+    "connection": "conexión",
+    "disconnection": "desconexión",
+    "loneliness": "soledad",
+    "lonely": "solo",
+    "kindness": "amabilidad",
+    "compassion": "compasión",
+    "compassionate": "compasivo",
+    "forgiveness": "perdón",
+    "acceptance": "aceptación",
+    # ─── Trastornos clínicos ───
+    "depression": "depresión",
+    "depressed": "deprimido",
+    "anxiety": "ansiedad",
+    "anxious": "ansioso",
+    "social anxiety": "ansiedad social",
+    "panic attack": "ataque de pánico",
+    "panic attacks": "ataques de pánico",
+    "OCD": "TOC",
+    "obsessive-compulsive disorder": "trastorno obsesivo-compulsivo",
+    "eating disorder": "trastorno de la conducta alimentaria",
+    "eating disorders": "trastornos de la conducta alimentaria",
+    "bipolar disorder": "trastorno bipolar",
+    "non-suicidal self-injury": "autolesión no suicida",
+    "self-injury": "autolesión",
+    "suicide": "suicidio",
+    "suicidal": "suicida",
+    "sexual dysfunction": "disfunción sexual",
+    "mood swings": "cambios de humor",
+    "migraines": "migrañas",
+    # ─── Conducta y cognición ───
+    "procrastination": "procrastinación",
+    "procrastinate": "procrastinar",
+    "procrastinating": "procrastinando",
+    "bedtime procrastination": "procrastinación del sueño",
+    "rumination": "rumiación",
+    "ruminate": "rumiar",
+    "worry": "preocupación",
+    "worrying": "preocupación",
+    "all-or-nothing": "todo o nada",
+    "all or nothing": "todo o nada",
+    "fear of failure": "miedo al fracaso",
+    "fear of judgment": "miedo a ser juzgado",
+    "imposter syndrome": "síndrome del impostor",
+    "impostor syndrome": "síndrome del impostor",
+    "cringe": "vergüenza ajena",
+    "cringe attack": "ataque de vergüenza ajena",
+    "intrusive thoughts": "pensamientos intrusivos",
+    "intrusive": "intrusivo",
+    "trigger": "detonante",
+    "triggered": "detonar",
+    "boundaries": "límites",
+    "people-pleasing": "complacer a los demás",
+    "people pleaser": "persona complaciente",
+    "overthinking": "sobreanalizar",
+    # ─── Terapia y enfoques clínicos ───
+    "therapy": "terapia",
+    "therapist": "terapeuta",
+    "therapists": "terapeutas",
+    "client": "paciente",  # En contexto clínico, "client" suele ser "paciente" en español
+    "clients": "pacientes",
+    "session": "sesión",
+    "sessions": "sesiones",
+    "cognitive-behavioral therapy": "terapia cognitivo-conductual",
+    "CBT": "TCC",
+    "Acceptance and Commitment Therapy": "Terapia de Aceptación y Compromiso",
+    "ACT": "ACT",
+    "mindfulness": "mindfulness",
+    "mindful": "consciente",
+    "defusion": "defusión",
+    "psychologist": "psicólogo",
+    "psychologists": "psicólogos",
+    "clinical psychologist": "psicólogo clínico",
+    "psychiatry": "psiquiatría",
+    "psychiatrist": "psiquiatra",
+    "mental health": "salud mental",
+    "well-being": "bienestar",
+    "wellbeing": "bienestar",
+    # ─── Investigación científica ───
+    "researcher": "investigador",
+    "researchers": "investigadores",
+    "study": "estudio",
+    "studies": "estudios",
+    "research": "investigación",
+    "experiment": "experimento",
+    "meta-analysis": "metaanálisis",
+    "meta-analytic": "metaanalítico",
+    "participant": "participante",
+    "participants": "participantes",
+    "data": "datos",
+    "evidence": "evidencia",
+    "findings": "hallazgos",
+    "results": "resultados",
+    "hypothesis": "hipótesis",
+    # ─── Personas — NO traducir ───
+    "Ellen Hendriksen": "Ellen Hendriksen",
+    "Walt Disney": "Walt Disney",
+    "Fred Rogers": "Fred Rogers",
+    "Angela Duckworth": "Angela Duckworth",
+    "Roz Shafran": "Roz Shafran",
+    "Zafra Cooper": "Zafra Cooper",
+    "Christopher Fairburn": "Christopher Fairburn",
+    "Gordon Flett": "Gordon Flett",
+    "Paul Hewitt": "Paul Hewitt",
+    "Thomas Curran": "Thomas Curran",
+    "Andrew Hill": "Andrew Hill",
+    "Martin Smith": "Martin Smith",
+    "Helen Block Lewis": "Helen Block Lewis",
+    "Chad LeJeune": "Chad LeJeune",
+    "Albert Ellis": "Albert Ellis",
+    "Erica Smith Lynch": "Erica Smith Lynch",
+    "Sara Hopkins": "Sara Hopkins",
+    "Amy Chua": "Amy Chua",
+    "Lizzo": "Lizzo",
+    "Gina Rodriguez": "Gina Rodriguez",
+    "LeBron": "LeBron",
+    # ─── Instituciones ───
+    "Oxford University": "Universidad de Oxford",
+    "University of British Columbia": "Universidad de Columbia Británica",
+    "Trinity Western University": "Universidad Trinity Western",
+    "Boston University": "Universidad de Boston",
+    "St. Martin's Essentials": "St. Martin's Essentials",
+    "St. Martin's Publishing Group": "St. Martin's Publishing Group",
+    # ─── Topónimos — exónimos asentados ───
+    "United States": "Estados Unidos",
+    "America": "Estados Unidos",
+    "American": "estadounidense",
+    "Americans": "estadounidenses",
+    "New York": "Nueva York",
+    "Massachusetts": "Massachusetts",
+    "Boston": "Boston",
+    "Alaska": "Alaska",
+    "Florida": "Florida",
+    "Missouri": "Missouri",
+    "British Columbia": "Columbia Británica",
+    "Belgium": "Bélgica",
+    "Greek": "griego",
+    # ─── Obras citadas — NO traducir títulos en cursiva ───
+    "How to Be Yourself": "How to Be Yourself",
+    "Grit": "Grit",
+    "Battle Hymn of the Tiger Mother": "Battle Hymn of the Tiger Mother",
+    "Someone Great": "Someone Great",
+    "Dear Evan Hansen": "Dear Evan Hansen",
+    "My Favorite Murder": "My Favorite Murder",
+    "The New York Times": "The New York Times",
+}
+
+SYSTEM_PROMPT_HOW_TO_BE_ENOUGH = """Eres un traductor literario profesional especializado en psicología clínica de divulgación. Traduces del inglés al español neutro latinoamericano (lector general, sin formación clínica previa).
+
+Este libro es "How to Be Enough: Self-Acceptance for Self-Critics and Perfectionists" de la Dra. Ellen Hendriksen (St. Martin's Essentials, 2024). Hendriksen es psicóloga clínica de Boston University, especialista en ansiedad social. El libro habla del perfeccionismo y la autocrítica como problema clínico, con un tono cálido, conversacional y con humor. Mezcla casos clínicos (con seudónimos: Gus, Francesca, Carter, Jamila), referencias a investigación científica y anécdotas personales en primera persona.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_N⟧ son placeholders protegidos. NO los traduzcas, NO los modifiques.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <p>, <i>, <em>, <b>, <strong>, <a href>, <span>, <sup>, <br/>, <hr/>, <blockquote>, <ul>, <li>, <h1>-<h6>, <hgroup>, <small>, etc. Mismos atributos (class, id, href, lang, role, epub:type, aria-label), mismas cantidades, mismo orden.
+   - Las clases CSS específicas del editor (CHAPTER, CN, CT, CO, TX, SB2, FN, CRT, CRT1, CRT2, cotx_SC, eSANS_*, etc.) se preservan IDÉNTICAS — no las cambies, no las traduzcas.
+
+3. PAGEBREAKS — preservar exactamente:
+   - <span aria-label="N" epub:type="pagebreak" id="pg_N" role="doc-pagebreak"/> queda IDÉNTICO. El aria-label es solo el número de página, no se traduce.
+
+4. NOTAS AL PIE (footnote-N en footnotes.xhtml):
+   - Estructura: <li epub:type="rearnote" id="footnote-N"><p class="FN"><a hidden="hidden" href="...#footnote-N-backlink">*</a> Texto de la nota</p></li>
+   - Traduce el texto de la nota, preserva el asterisco (*) y el enlace de backlink.
+   - Las notas pueden contener títulos de libros en <i>...</i> que NO se traducen (p. ej. <i>Grit: The Power of Passion and Perseverance</i>, <i>Battle Hymn of the Tiger Mother</i>, <i>"Pure O" OCD: Letting Go of Obsessive Thoughts...</i>).
+   - Las notas son humorísticas, conversacionales, con tono de autora — preserva ese registro.
+
+5. CASOS CLÍNICOS — seudónimos NO se traducen:
+   - Gus, Francesca, Carter, Jamila, Jasper, Jim, etc. → tal cual.
+   - Cuando se cita lo que dice un paciente entre comillas, traduce su voz manteniendo la naturalidad oral (con muletillas, contracciones del estilo conversacional).
+
+6. TÉRMINOS CLÍNICOS — consistencia obligatoria (respeta el glosario):
+   - perfectionism → perfeccionismo; perfectionist → perfeccionista (siempre).
+   - conscientiousness → responsabilidad (es el término estándar de los Cinco Grandes/Big Five en español; la autora la describe como "caring deeply, attention to detail, work ethic" — "responsabilidad" lo captura).
+   - self-acceptance → autoaceptación; self-compassion → autocompasión; self-criticism → autocrítica.
+   - overevaluation → sobreevaluación; overevaluate → sobreevaluar.
+   - self-oriented / other-oriented / socially prescribed perfectionism → perfeccionismo autoorientado / orientado a otros / socialmente prescrito.
+   - clinical perfectionism → perfeccionismo clínico; adaptive perfectionism → perfeccionismo adaptativo.
+   - OCD → TOC; CBT → TCC; ACT → ACT (sigla en inglés ya consagrada); mindfulness → mindfulness (no traducir, está adoptado).
+   - eating disorder → trastorno de la conducta alimentaria; non-suicidal self-injury → autolesión no suicida.
+   - rumination → rumiación; defusion → defusión; bedtime procrastination → procrastinación del sueño.
+
+7. NOMBRES PROPIOS — NO traducir:
+   - Personas: Ellen Hendriksen, Walt Disney, Fred Rogers, Angela Duckworth, Roz Shafran, Zafra Cooper, Christopher Fairburn, Gordon Flett, Paul Hewitt, Thomas Curran, Andrew Hill, Martin Smith, Helen Block Lewis, Chad LeJeune, Albert Ellis, Amy Chua, Lizzo, LeBron, etc.
+   - Tratamientos académicos: "Dr." → "Dra." cuando es mujer (p. ej. "Dr. Ellen Hendriksen" → "Dra. Ellen Hendriksen", "Dr. Roz Shafran" → "Dra. Roz Shafran"), "Dr." si es hombre. Usar "Drs." para plural mixto → "Los Dres." o "Los doctores".
+   - Instituciones: Oxford University → "Universidad de Oxford"; Boston University → "Universidad de Boston"; University of British Columbia → "Universidad de Columbia Británica"; Trinity Western University → "Universidad Trinity Western". MIT, Harvard, Stanford → tal cual.
+   - Editoriales/medios: St. Martin's Essentials, St. Martin's Publishing Group, The New York Times → tal cual.
+
+8. TOPÓNIMOS — exónimos en español cuando estén asentados:
+   New York → Nueva York; United States/America → Estados Unidos; American(s) → estadounidense(s); Belgium → Bélgica; British Columbia → Columbia Británica.
+   SIN exónimo (mantener original): Massachusetts, Boston, Alaska, Florida, Missouri.
+
+9. TÍTULOS DE OBRAS, PELÍCULAS, CANCIONES, PODCASTS — NO traducir, conservar en cursiva:
+   <i>How to Be Yourself</i>, <i>Grit</i>, <i>Battle Hymn of the Tiger Mother</i>, <i>Someone Great</i>, <i>Dear Evan Hansen</i>, <i>My Favorite Murder</i>, <i>"Pure O" OCD: Letting Go of Obsessive Thoughts with Acceptance and Commitment Therapy</i>. Conservar tags <i>/<em>.
+
+10. MARCAS Y REFERENCIAS POP — preservar:
+    M&M's, Cool Ranch Doritos, AOL Instant Messenger, TikTok, Pap smear → tal cual. La autora usa estas referencias para humor y color cultural; consérvalas.
+
+11. ESPAÑOL NEUTRO LATINOAMERICANO — TUTEO:
+    - Usar "tú" como segunda persona ("tienes", "puedes", "haces", "te das cuenta"), NUNCA voseo ("tenés", "podés", "te das cuenta che").
+    - Sin modismos regionales (chévere, bacán, guay, chido, mola, dale, che, papá).
+    - Sin conjugaciones peninsulares (vosotros tenéis, habríais).
+    - "you" puede ser "tú" o "ustedes" según contexto: cuando Hendriksen se dirige al lector individual (lo más común), "tú". Cuando habla del grupo "we perfectionists", traduce con "nosotros".
+    - Registro: cálido, conversacional, divulgativo. Imagina que la autora habla de tú a tú con el lector, con confianza pero sin perder claridad clínica.
+
+12. TONO DE HENDRIKSEN — CRÍTICO:
+    - Voz en primera persona ("I", "I've seen", "my client", "in my practice") — preservar ("Yo", "He visto", "mi paciente", "en mi consulta").
+    - "we" inclusivo (autora + lector + pacientes perfeccionistas) — traducir con "nosotros" (los perfeccionistas).
+    - Humor seco, autoirónico, con metáforas concretas (jelly donut, a porcupine's raincoat, like putting socks on a rooster, alphabet soup of pMFC, AI, IFG). Traduce las metáforas conservando el efecto humorístico, no las explicas.
+    - Registro emocional cálido: cuando dice "I'm right there with you", "dear reader", "I pinkie promise" — preserva la cercanía: "estoy contigo", "querido lector / querida lectora", "te lo prometo de meñique".
+    - Términos clínicos en cursiva (<i>perfectionism</i>, <i>overevaluation</i>, <i>self-criticism</i>) cuando se introducen como concepto técnico — preserva los tags.
+
+13. CITAS DIRECTAS DE PACIENTES — naturalidad oral:
+    - "I have two gears: overdrive and park." → "'Tengo dos velocidades: máxima y aparcado.'" (o equivalente natural).
+    - "I always feel like I'm letting everyone down." → "'Siempre siento que estoy decepcionando a todo el mundo.'"
+    - Mantén comillas curvas y registro coloquial.
+
+14. NÚMEROS, FECHAS, MEDIDAS:
+    - Fechas: "March 14, 2023" → "14 de marzo de 2023".
+    - Siglos: "the twenty-first century" → "el siglo XXI".
+    - Porcentajes y cifras: respetar formato original.
+    - "1600s" → "el siglo XVII"; "the mid-2000s" → "mediados de los 2000".
+
+15. PALABRAS EN ITÁLICAS — distinguir:
+    - Si es un término técnico que se introduce (<i>conscientiousness</i>, <i>overevaluation</i>) → traducir el término dentro de <i>...</i>: <i>responsabilidad</i>, <i>sobreevaluación</i>.
+    - Si es énfasis estilístico (<i>never</i>, <i>not</i>, <i>we'</i>ve failed) → traducir y mantener la cursiva.
+    - Si es título de obra o nombre extranjero → NO traducir el contenido (ver regla 9).
+    - Si es palabra latina o griega como ejemplo etimológico (<i>teleiōsis</i>, <i>telos</i>, <i>conscience</i> en su origen) → NO traducir; explica entre paréntesis solo si el original lo hace.
+
+16. ESTRUCTURAS DE CAPÍTULO:
+    - <hgroup> con <span class="CN"> (chapter number) y <span class="CT"> (chapter title): traducir el TÍTULO pero NO el número arábigo dentro de <span class="eSANS_Alternate_Gothic_Com_No_3_11">.
+    - Primer párrafo de capítulo (<p class="CO">) suele empezar con SMALL CAPS (<span class="cotx_SC">SINCE YOU PICKED</span>): preserva el span y traduce el texto manteniendo la idea de "small caps" — el editor renderiza la mayúscula visual.
+    - <hr class="transition"/> es un separador visual entre secciones — NO se traduce, solo se preserva.
+
+17. NO expliques, NO resumas, NO agregues notas del traductor.
+
+18. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_HOW_TO_BE_ENOUGH = [
+    r"^cover\.xhtml$",
+    r"^title\.xhtml$",
+    r"^copyright\.xhtml$",
+    r"^copyrightnotice\.xhtml$",
+    r"^newsletter\.xhtml$",
+    r"^adcard\.xhtml$",
+    r"^nav\.xhtml$",
+]
+
+# ─── Profile: The Art of Community (Charles H. Vogl, Berrett-Koehler 2016) ─────
+
+GLOSSARY_ART_OF_COMMUNITY: dict[str, str] = {
+    # ─── Core concept: community & belonging ───
+    "community": "comunidad",
+    "communities": "comunidades",
+    "belonging": "pertenencia",
+    "belong": "pertenecer",
+    "connection": "conexión",
+    "connectedness": "interconexión",
+    "social connectedness": "interconexión social",
+    "disconnection": "desconexión",
+    "loneliness": "soledad",
+    "isolation": "aislamiento",
+    "social isolation": "aislamiento social",
+    "fellowship": "compañerismo",
+    "kinship": "afinidad",
+    "tribe": "tribu",
+    "tribes": "tribus",
+    # ─── Seven principles of belonging (book's core framework) ───
+    "the seven principles": "los siete principios",
+    "seven principles of belonging": "siete principios de pertenencia",
+    "Boundary": "Frontera",
+    "boundary": "frontera",
+    "boundaries": "fronteras",
+    "Initiation": "Iniciación",
+    "initiation": "iniciación",
+    "initiations": "iniciaciones",
+    "Rituals": "Rituales",
+    "ritual": "ritual",
+    "rituals": "rituales",
+    "Temple": "Templo",
+    "temple": "templo",
+    "temples": "templos",
+    "Stories": "Historias",
+    "story": "historia",
+    "stories": "historias",
+    "Symbols": "Símbolos",
+    "symbol": "símbolo",
+    "symbols": "símbolos",
+    "Inner Rings": "Círculos Internos",
+    "Inner Ring": "Círculo Interno",
+    "inner ring": "círculo interno",
+    "inner rings": "círculos internos",
+    # ─── Membership & identity ───
+    "member": "miembro",
+    "members": "miembros",
+    "membership": "membresía",
+    "membership identity": "identidad de membresía",
+    "insider": "miembro",
+    "insiders": "miembros",
+    "outsider": "forastero",
+    "outsiders": "forasteros",
+    "newcomer": "recién llegado",
+    "newcomers": "recién llegados",
+    "visitor": "visitante",
+    "visitors": "visitantes",
+    "stranger": "desconocido",
+    "strangers": "desconocidos",
+    "guest": "invitado",
+    "guests": "invitados",
+    "host": "anfitrión",
+    "hosts": "anfitriones",
+    # ─── Values & ethics ───
+    "shared values": "valores compartidos",
+    "values": "valores",
+    "value": "valor",
+    "moral proscriptions": "prescripciones morales",
+    "moral proscription": "prescripción moral",
+    "moral code": "código moral",
+    "insider understanding": "comprensión de los miembros",
+    "shared concern": "preocupación compartida",
+    "mutual concern": "preocupación mutua",
+    "welfare": "bienestar",
+    "well-being": "bienestar",
+    "wellbeing": "bienestar",
+    # ─── Leadership & roles ───
+    "leader": "líder",
+    "leaders": "líderes",
+    "leadership": "liderazgo",
+    "elder": "anciano",
+    "elders": "ancianos",
+    "mentor": "mentor",
+    "mentors": "mentores",
+    "mentorship": "mentoría",
+    "guide": "guía",
+    "founder": "fundador",
+    "founders": "fundadores",
+    # ─── Spaces, gateways, thresholds ───
+    "gateway": "puerta de entrada",
+    "gateways": "puertas de entrada",
+    "threshold": "umbral",
+    "thresholds": "umbrales",
+    "gathering": "encuentro",
+    "gatherings": "encuentros",
+    "meeting": "reunión",
+    "meetings": "reuniones",
+    "gathering place": "lugar de encuentro",
+    "sacred space": "espacio sagrado",
+    "common space": "espacio común",
+    "the commons": "el bien común",
+    # ─── Rites, rituals, ceremonies ───
+    "rite": "rito",
+    "rites": "ritos",
+    "rite of passage": "rito de iniciación",
+    "rites of passage": "ritos de iniciación",
+    "ceremony": "ceremonia",
+    "ceremonies": "ceremonias",
+    "tradition": "tradición",
+    "traditions": "tradiciones",
+    "custom": "costumbre",
+    "customs": "costumbres",
+    "vow": "voto",
+    "vows": "votos",
+    "oath": "juramento",
+    "oaths": "juramentos",
+    # ─── Faith, spirituality, religion ───
+    "faith": "fe",
+    "spiritual": "espiritual",
+    "spirituality": "espiritualidad",
+    "religious": "religioso",
+    "religion": "religión",
+    "congregation": "congregación",
+    "congregations": "congregaciones",
+    "parish": "parroquia",
+    "parishioner": "feligrés",
+    "parishioners": "feligreses",
+    "clergy": "clero",
+    "minister": "pastor",
+    "pastor": "pastor",
+    "rabbi": "rabino",
+    "priest": "sacerdote",
+    "monk": "monje",
+    "nun": "monja",
+    "sermon": "sermón",
+    "prayer": "oración",
+    "scripture": "escritura",
+    # ─── Sociology / academic terms ───
+    "social capital": "capital social",
+    "civic engagement": "compromiso cívico",
+    "civic life": "vida cívica",
+    "civil society": "sociedad civil",
+    "social fabric": "tejido social",
+    "social bond": "vínculo social",
+    "social bonds": "vínculos sociales",
+    "in-group": "endogrupo",
+    "out-group": "exogrupo",
+    "identity": "identidad",
+    "shared identity": "identidad compartida",
+    "collective identity": "identidad colectiva",
+    "homogeneity": "homogeneidad",
+    "diversity": "diversidad",
+    "inclusion": "inclusión",
+    "exclusion": "exclusión",
+    # ─── Storytelling ───
+    "storytelling": "narración",
+    "narrative": "narrativa",
+    "myth": "mito",
+    "myths": "mitos",
+    "origin story": "historia de origen",
+    "personal story": "historia personal",
+    "founding story": "historia fundacional",
+    # ─── Casual register ───
+    "warm body": "cuerpo presente",
+    "warm bodies": "cuerpos presentes",
+    "secret handshake": "apretón de manos secreto",
+    "do-gooder": "alma noble",
+    "do-gooders": "almas nobles",
+    # ─── Authors & thinkers cited ───
+    "Charles H. Vogl": "Charles H. Vogl",
+    "Charles Vogl": "Charles Vogl",
+    "Robert Putnam": "Robert Putnam",
+    "Seth Godin": "Seth Godin",
+    "C. S. Lewis": "C. S. Lewis",
+    "Joseph Campbell": "Joseph Campbell",
+    "Margaret Wheatley": "Margaret Wheatley",
+    "Peter Block": "Peter Block",
+    "Mike Minium": "Mike Minium",
+    # ─── Books, articles, talks (NOT translated) ───
+    "Bowling Alone": "Bowling Alone",
+    "The Inner Ring": "The Inner Ring",
+    "Tribes": "Tribes",
+    "We Need You to Lead Us": "We Need You to Lead Us",
+    "Time for Life": "Time for Life",
+    "American Sociological Review": "American Sociological Review",
+    "Scientific American": "Scientific American",
+    "Journal of Democracy": "Journal of Democracy",
+    "Pew Research": "Pew Research",
+    "TEDx": "TEDx",
+    "PLoS Med": "PLoS Med",
+    # ─── Institutions & publishers ───
+    "Berrett-Koehler": "Berrett-Koehler",
+    "Berrett-Koehler Publishers": "Berrett-Koehler Publishers",
+    "BK Currents": "BK Currents",
+    "BK Community": "BK Community",
+    "Harvard": "Harvard",
+    "King's College": "King's College",
+    "University of London": "Universidad de Londres",
+    "Pennsylvania State University Press": "Pennsylvania State University Press",
+    # ─── Examples cited (companies, gyms, places) ───
+    "CrossFit": "CrossFit",
+    "CrossFit Oakland": "CrossFit Oakland",
+    "Greg Glassman": "Greg Glassman",
+    "Lauren Jenai": "Lauren Jenai",
+    "Greenpeace": "Greenpeace",
+    "Museum of Modern Art": "Museum of Modern Art",
+    "American Medical Association": "American Medical Association",
+    "Tour de France": "Tour de France",
+    # ─── Toponyms ───
+    "United States": "Estados Unidos",
+    "America": "Estados Unidos",
+    "American": "estadounidense",
+    "Americans": "estadounidenses",
+    "New York": "Nueva York",
+    "New York City": "Nueva York",
+    "San Francisco": "San Francisco",
+    "San Francisco Bay Area": "Área de la Bahía de San Francisco",
+    "California": "California",
+    "Northern California": "el norte de California",
+    "Oakland": "Oakland",
+    "New Haven": "New Haven",
+    "Connecticut": "Connecticut",
+    "Nigeria": "Nigeria",
+    "London": "Londres",
+}
+
+SYSTEM_PROMPT_ART_OF_COMMUNITY = """Eres un traductor literario profesional especializado en no-ficción de liderazgo, sociología popular y desarrollo organizacional. Traduces del inglés al español neutro latinoamericano (lector culto general, sin formación técnica especializada).
+
+Este libro es "The Art of Community: Seven Principles for Belonging" de Charles H. Vogl (Berrett-Koehler Publishers, BK Currents, 2016). Vogl es consultor de liderazgo y formado en estudios de divinidad en Yale; el libro propone siete principios (Frontera, Iniciación, Rituales, Templo, Símbolos, Historias, Círculos Internos) para construir comunidades de pertenencia genuina. Mezcla casos reales (con nombres propios: Mike Minium en CrossFit Oakland, Margaret en Ski Valley, Melissa la bombera, Adam el chef, Sara la cineasta, etc.), referencias académicas (Robert Putnam, C. S. Lewis, Seth Godin) y reflexión personal en primera persona. Tono cálido, accesible, con vocación práctica de manual.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_N⟧ son placeholders protegidos. NO los traduzcas, NO los modifiques.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <p>, <i>, <em>, <b>, <strong>, <a href>, <span>, <sup>, <br/>, <hr/>, <blockquote>, <ul>, <ol>, <li>, <h1>-<h6>, <img>, <small>. Mismos atributos (class, id, href, alt, title, lang, role, epub:type), mismas cantidades, mismo orden.
+   - Las clases CSS de Berrett-Koehler se preservan IDÉNTICAS — no las cambies, no las traduzcas:
+     * Párrafos: `noindent`, `noindentb1`, `indent`, `indentb`, `indentt`, `indentt1`, `bq`, `bq1b`, `bmt`, `bmn`, `bmnb`, `bmnb1`, `note`, `note1`.
+     * Encabezados: `h2a`, `h2p`, `h3b`, `h4`, `h5`, `h6`.
+     * Estilísticas: `underline` (subrayado en títulos de capítulo, p. ej. <span class="underline">One</span>).
+
+3. PAGEBREAKS / ANCLAS DE PÁGINA — preservar exactamente:
+   - <a id="page_N"/> queda IDÉNTICO en posición y formato. No fusionar, no eliminar.
+   - Anclas de notas al pie: <a id="ch01note1"/> en el cuerpo del texto (marcador), y el enlace <a href="notes.html#ich01note1"><sup>1</sup></a> que apunta a la nota — preservar ambos exactamente.
+
+4. NOTAS AL PIE (notes.html, archivo separado):
+   - Estructura: <p class="note"><a id="iprenote1"/><a href="preface.html#prenote1">1</a>. Texto de la nota</p>
+   - Traduce el texto de la nota, preserva el número, los IDs y el enlace de backlink.
+   - Las notas suelen ser bibliográficas: títulos de libros y artículos en <em>...</em> NO se traducen (p. ej. <em>Bowling Alone</em>, <em>American Sociological Review</em>, <em>Time for Life</em>).
+   - Conservar nombres de revistas, editoriales y URLs IDÉNTICOS.
+   - El "Ibid." se mantiene como "Ibid." (convención académica universal).
+
+5. CASOS PERSONALES — nombres propios NO se traducen:
+   - Mike Minium, Margaret, Melissa, Adam, Sara, Mike, etc. → tal cual.
+   - Cuando se cita lo que dice una persona entre comillas, traduce su voz manteniendo naturalidad oral del español neutro.
+
+6. TÉRMINOS NÚCLEO — consistencia obligatoria (respeta el glosario):
+   - community → comunidad (NO "colectivo", NO "grupo" salvo cuando el original distingue explícitamente "group" vs "community").
+   - belonging → pertenencia; belong → pertenecer.
+   - inner ring(s) → círculo(s) interno(s) (concepto tomado del ensayo de C. S. Lewis "The Inner Ring" — preservar consistencia).
+   - insider → miembro; outsider → forastero (NO "extraño", NO "ajeno"). Cuando el contraste insider/outsider es central, mantenerlo claro.
+   - membership identity → identidad de membresía.
+   - shared values → valores compartidos; mutual concern → preocupación mutua.
+   - moral proscriptions → prescripciones morales (término técnico de Vogl; preserva el plural y el matiz de "lo prohibido").
+   - threshold → umbral; gateway → puerta de entrada; rite of passage → rito de iniciación.
+   - LOS SIETE PRINCIPIOS, cuando se nombran como concepto (con mayúscula inicial en el original): Frontera, Iniciación, Rituales, Templo, Símbolos, Historias, Círculos Internos. En texto corrido (minúscula) se traducen normalmente.
+
+7. NOMBRES PROPIOS — NO traducir:
+   - Personas: Charles H. Vogl, Robert Putnam, Seth Godin, C. S. Lewis, Joseph Campbell, Margaret Wheatley, Peter Block, Mike Minium, Greg Glassman, Lauren Jenai, etc.
+   - Tratamientos: "Dr." → "Dr." (hombre) o "Dra." (mujer) según corresponda; "Prof." → "Prof.".
+   - Instituciones: Harvard, Berrett-Koehler, BK Currents, BK Community, CrossFit, CrossFit Oakland, Greenpeace, Museum of Modern Art, American Medical Association, Tour de France → tal cual.
+   - University of London → "Universidad de Londres"; King's College → "King's College" (sin traducir).
+   - Editoriales/medios: Berrett-Koehler Publishers, Pennsylvania State University Press, The New York Times, Scientific American, American Sociological Review → tal cual.
+
+8. TOPÓNIMOS — exónimos en español cuando estén asentados:
+   New York / New York City → Nueva York; United States/America → Estados Unidos; American(s) → estadounidense(s); London → Londres; Northern California → el norte de California; San Francisco Bay Area → Área de la Bahía de San Francisco.
+   SIN exónimo (mantener original): Oakland, New Haven, Connecticut, California, San Francisco, Nigeria.
+
+9. TÍTULOS DE OBRAS, ARTÍCULOS, ENSAYOS, CONFERENCIAS — NO traducir, conservar en cursiva (<em> o <i>):
+   <em>Bowling Alone</em>, <em>Tribes: We Need You to Lead Us</em>, <em>Time for Life</em>, <em>The Inner Ring</em> (ensayo de C. S. Lewis), <em>American Sociological Review</em>, <em>Journal of Democracy</em>, <em>Scientific American</em>, etc.
+   - Conferencias TED/TEDx: tal cual (p. ej. "TEDxBeaconStreet").
+   - Si el original cita un título entre comillas (p. ej. "Social Isolation in America"), preserva las comillas y NO traduzcas el título.
+
+10. CITAS DIRECTAS — registro natural:
+    - Citas largas en bloque (con clase `bq`, `bq1b`): traduce con cuidado, conservando el ritmo y la cadencia. No reformular para "mejorar".
+    - Citas cortas con comillas curvas en el texto: respeta las comillas (" ") y mantén el registro hablado o formal según el original.
+    - Cita de Putnam, Lewis y otros: traducción literal cuidada — son referencias académicas y la fidelidad importa.
+
+11. ESPAÑOL NEUTRO LATINOAMERICANO — TUTEO:
+    - Usar "tú" como segunda persona ("tienes", "puedes", "haces", "te invito"), NUNCA voseo ("tenés", "podés", "te doy che").
+    - Sin modismos regionales (chévere, bacán, guay, chido, mola, dale, che, papá, loco).
+    - Sin conjugaciones peninsulares (vosotros tenéis, habríais).
+    - "you" puede ser "tú" o "ustedes" según contexto: cuando Vogl se dirige al lector individual como líder de su propia comunidad (lo más común en este libro-manual), "tú". Cuando habla de "we" inclusivo (autor + lector + humanidad), "nosotros".
+    - Registro: cálido, claro, con vocación práctica. Vogl escribe como mentor que comparte un manual; mantén esa voz didáctica sin caer en lo paternalista.
+
+12. TONO DE VOGL — CRÍTICO:
+    - Voz en primera persona ("I", "I've seen", "my friend", "in my experience") — preservar ("Yo", "He visto", "mi amigo/amiga", "en mi experiencia").
+    - "we" inclusivo (autor + lector + comunidad humana) — traducir con "nosotros".
+    - Anécdotas concretas: cuando narra casos reales (CrossFit Oakland, Ski Valley, la bombera Melissa), preserva el tiempo verbal del original (presente narrativo o pretérito según corresponda).
+    - Preguntas retóricas dirigidas al lector ("Have you seen this?", "Consider..."): tradúcelas naturales en español ("¿Has visto esto?", "Piensa...").
+    - Términos técnicos en cursiva (<em>membership identity</em>, <em>inner ring</em>) cuando se introducen por primera vez: traduce el término dentro de los tags <em>...</em>.
+
+13. NÚMEROS, FECHAS, MEDIDAS:
+    - Fechas: "October 9, 2012" → "9 de octubre de 2012"; "January 27, 2014" → "27 de enero de 2014".
+    - Siglos: "the twenty-first century" → "el siglo XXI"; "the 1950s" → "los años cincuenta" o "la década de 1950".
+    - Cifras grandes: "thirteen thousand" → "trece mil"; "two million" → "dos millones".
+    - Porcentajes: respetar formato original.
+
+14. PALABRAS EN CURSIVA — distinguir:
+    - Si es un término técnico que se introduce (<em>membership identity</em>, <em>inner ring</em>) → traducir el término dentro de <em>...</em>: <em>identidad de membresía</em>, <em>círculo interno</em>.
+    - Si es énfasis estilístico (<em>both</em>, <em>at least</em>, <em>some</em>) → traducir y mantener la cursiva.
+    - Si es título de obra → NO traducir el contenido (ver regla 9).
+    - Si es palabra latina o griega como etimología → NO traducir; explica entre paréntesis solo si el original lo hace.
+
+15. ESTRUCTURAS DE CAPÍTULO:
+    - Encabezados de capítulo: <h3 class="h3b" id="chN"><strong><span class="underline">One</span><br/><br/>Understanding Community</strong></h3>
+      → traducir "One" como "Uno" (número del capítulo en palabra) y "Understanding Community" como "Entender la comunidad". Conservar <span class="underline">, <br/>, <strong> y todos los IDs.
+    - Encabezados de parte: <h2 class="h2p"><strong><span class="underline">Part One</span><br/><br/>Recognizing Community</strong></h2> → "Parte uno" / "Reconocer la comunidad".
+    - Subsecciones (<h4>, <h5>, <h6>): traducir el texto, preservar tags y atributos.
+
+16. NO expliques, NO resumas, NO agregues notas del traductor.
+
+17. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_ART_OF_COMMUNITY = [
+    r"^cover\.html$",
+    r"^title\.html$",
+    r"^halftitle\.html$",
+]
+
+# ─── Perfil: Life in Three Dimensions (Shigehiro Oishi, Knopf/PRH, 2025) ───
+
+GLOSSARY_LIFE_IN_THREE_DIMENSIONS: dict[str, str] = {
+    # ─── Núcleo del libro: las tres dimensiones del buen vivir ───
+    "happiness": "felicidad",
+    "happy": "feliz",
+    "unhappy": "infeliz",
+    "happier": "más feliz",
+    "happiest": "más feliz",
+    "meaning": "sentido",
+    "meaning in life": "sentido de la vida",
+    "meaningful": "significativo",
+    "meaningfulness": "carácter significativo",
+    "the meaningful life": "la vida significativa",
+    "psychological richness": "riqueza psicológica",
+    "psychologically rich": "psicológicamente rico",
+    "psychologically rich life": "vida psicológicamente rica",
+    "rich life": "vida rica",
+    "richness": "riqueza",
+    "the good life": "la buena vida",
+    "good life": "buena vida",
+    # ─── Tradiciones filosóficas del bienestar ───
+    "hedonic": "hedónico",
+    "hedonism": "hedonismo",
+    "hedonia": "hedonía",
+    "hedonic adaptation": "adaptación hedónica",
+    "hedonic treadmill": "cinta hedónica",
+    "eudaimonic": "eudaimónico",
+    "eudaimonia": "eudaimonía",
+    "eudaimonic well-being": "bienestar eudaimónico",
+    "hedonic well-being": "bienestar hedónico",
+    "virtue": "virtud",
+    "virtuous": "virtuoso",
+    "self-sacrifice": "autosacrificio",
+    "self-acceptance": "autoaceptación",
+    "authentic life": "vida auténtica",
+    "authenticity": "autenticidad",
+    "bad faith": "mala fe",
+    # ─── Bienestar subjetivo y constructos relacionados ───
+    "well-being": "bienestar",
+    "wellbeing": "bienestar",
+    "subjective well-being": "bienestar subjetivo",
+    "life satisfaction": "satisfacción con la vida",
+    "satisfaction with life": "satisfacción con la vida",
+    "positive affect": "afecto positivo",
+    "negative affect": "afecto negativo",
+    "flourishing": "florecimiento",
+    "thriving": "prosperar",
+    "purpose": "propósito",
+    "purpose in life": "propósito en la vida",
+    "personal growth": "crecimiento personal",
+    "autonomy": "autonomía",
+    "environmental mastery": "dominio del entorno",
+    "positive relations": "relaciones positivas",
+    "positive relations with others": "relaciones positivas con los demás",
+    # ─── Conceptos centrales de psicología positiva ───
+    "positive psychology": "psicología positiva",
+    "flow": "flujo",
+    "flow state": "estado de flujo",
+    "in the flow": "en flujo",
+    "growth mindset": "mentalidad de crecimiento",
+    "fixed mindset": "mentalidad fija",
+    "mindset": "mentalidad",
+    "grit": "determinación",
+    "resilience": "resiliencia",
+    "resilient": "resiliente",
+    "gratitude": "gratitud",
+    "gratitude letter": "carta de gratitud",
+    "gratitude journal": "diario de gratitud",
+    "savoring": "saboreo",
+    "mindfulness": "atención plena",
+    "prosocial": "prosocial",
+    "prosocial spending": "gasto prosocial",
+    "prosocial behavior": "conducta prosocial",
+    "kindness": "amabilidad",
+    "altruism": "altruismo",
+    "altruistic": "altruista",
+    "compassion": "compasión",
+    "empathy": "empatía",
+    "satisficer": "satisficer",
+    "satisficing": "satisficing",
+    "maximizer": "maximizador",
+    "maximizing": "maximización",
+    "self-determination theory": "teoría de la autodeterminación",
+    "self-determination": "autodeterminación",
+    "intrinsic motivation": "motivación intrínseca",
+    "extrinsic motivation": "motivación extrínseca",
+    "self-efficacy": "autoeficacia",
+    "self-esteem": "autoestima",
+    "self-compassion": "autocompasión",
+    # ─── Curiosidad y exploración (subtítulo del libro) ───
+    "curiosity": "curiosidad",
+    "curious": "curioso",
+    "exploration": "exploración",
+    "exploratory": "exploratorio",
+    "explore": "explorar",
+    "novelty": "novedad",
+    "novel": "novedoso",
+    "novelty seeking": "búsqueda de novedad",
+    "sensation seeking": "búsqueda de sensaciones",
+    "openness": "apertura",
+    "openness to experience": "apertura a la experiencia",
+    "wonder": "asombro",
+    "awe": "asombro",
+    "adventure": "aventura",
+    "adventurous": "aventurero",
+    "experience": "experiencia",
+    "experiences": "experiencias",
+    "experiential": "experiencial",
+    # ─── Big Five (rasgos de personalidad — términos consagrados) ───
+    "Big Five": "Cinco Grandes",
+    "Big Five personality": "Cinco Grandes de la personalidad",
+    "personality trait": "rasgo de personalidad",
+    "personality traits": "rasgos de personalidad",
+    "Openness": "Apertura",
+    "Conscientiousness": "Responsabilidad",
+    "Extraversion": "Extraversión",
+    "extraversion": "extraversión",
+    "extravert": "extravertido",
+    "introvert": "introvertido",
+    "introversion": "introversión",
+    "Agreeableness": "Amabilidad",
+    "Neuroticism": "Neuroticismo",
+    "neuroticism": "neuroticismo",
+    # ─── Estados afectivos y trastornos ───
+    "depression": "depresión",
+    "depressed": "deprimido",
+    "depressive": "depresivo",
+    "anxiety": "ansiedad",
+    "anxious": "ansioso",
+    "stress": "estrés",
+    "stressed": "estresado",
+    "stressful": "estresante",
+    "loneliness": "soledad",
+    "lonely": "solo",
+    "boredom": "aburrimiento",
+    "boring": "aburrido",
+    "regret": "arrepentimiento",
+    "regrets": "arrepentimientos",
+    "fear of missing out": "miedo a perderse algo",
+    "FOMO": "FOMO",
+    # ─── Investigación científica y metodología ───
+    "research": "investigación",
+    "researcher": "investigador",
+    "researchers": "investigadores",
+    "study": "estudio",
+    "studies": "estudios",
+    "experiment": "experimento",
+    "experiments": "experimentos",
+    "experimental": "experimental",
+    "participant": "participante",
+    "participants": "participantes",
+    "subject": "sujeto",
+    "subjects": "sujetos",
+    "sample": "muestra",
+    "sample size": "tamaño muestral",
+    "control group": "grupo de control",
+    "data": "datos",
+    "evidence": "evidencia",
+    "findings": "hallazgos",
+    "results": "resultados",
+    "hypothesis": "hipótesis",
+    "theory": "teoría",
+    "construct": "constructo",
+    "correlation": "correlación",
+    "correlate": "correlacionar",
+    "correlated": "correlacionado",
+    "meta-analysis": "metaanálisis",
+    "meta-analytic": "metaanalítico",
+    "longitudinal study": "estudio longitudinal",
+    "cross-cultural": "transcultural",
+    "cross-sectional": "transversal",
+    "scale": "escala",
+    "questionnaire": "cuestionario",
+    "survey": "encuesta",
+    "self-report": "autoinforme",
+    "self-reported": "autoinformado",
+    "psychological science": "ciencia psicológica",
+    "psychology": "psicología",
+    "psychologist": "psicólogo",
+    "psychological": "psicológico",
+    "neuroscience": "neurociencia",
+    "neuroscientist": "neurocientífico",
+    "epigenetic": "epigenético",
+    "epigenetics": "epigenética",
+    # ─── Investigadores y autores citados ───
+    "Shigehiro Oishi": "Shigehiro Oishi",
+    "Oishi": "Oishi",
+    "Ed Diener": "Ed Diener",
+    "Diener": "Diener",
+    "Martin Seligman": "Martin Seligman",
+    "Seligman": "Seligman",
+    "Mihaly Csikszentmihalyi": "Mihaly Csikszentmihalyi",
+    "Csikszentmihalyi": "Csikszentmihalyi",
+    "Carol Ryff": "Carol Ryff",
+    "Ryff": "Ryff",
+    "Carol Dweck": "Carol Dweck",
+    "Dweck": "Dweck",
+    "Sonja Lyubomirsky": "Sonja Lyubomirsky",
+    "Lyubomirsky": "Lyubomirsky",
+    "Daniel Kahneman": "Daniel Kahneman",
+    "Kahneman": "Kahneman",
+    "Dan Gilbert": "Dan Gilbert",
+    "Daniel Gilbert": "Daniel Gilbert",
+    "Gilbert": "Gilbert",
+    "Ed Deci": "Ed Deci",
+    "Edward Deci": "Edward Deci",
+    "Richard Ryan": "Richard Ryan",
+    "Randy Larsen": "Randy Larsen",
+    "Bob Emmons": "Bob Emmons",
+    "Robert Emmons": "Robert Emmons",
+    "Barbara Fredrickson": "Barbara Fredrickson",
+    "Fredrickson": "Fredrickson",
+    "Oliver Sacks": "Oliver Sacks",
+    "Sacks": "Sacks",
+    "William James": "William James",
+    "Jean-Paul Sartre": "Jean-Paul Sartre",
+    "Sartre": "Sartre",
+    "Toni Morrison": "Toni Morrison",
+    "Morrison": "Morrison",
+    "Donna Tartt": "Donna Tartt",
+    "Tartt": "Tartt",
+    "Lewis Capaldi": "Lewis Capaldi",
+    "Tolstoy": "Tolstói",
+    "Leo Tolstoy": "Lev Tolstói",
+    # ─── Obras literarias y culturales ───
+    "The Goldfinch": "El jilguero",
+    "Sula": "Sula",
+    "War and Peace": "Guerra y paz",
+    "On the Move": "On the Move",
+    "The Varieties of Religious Experience": "Las variedades de la experiencia religiosa",
+    "The Clash": "The Clash",
+    "Hells Angels": "Hells Angels",
+    # ─── Topónimos ───
+    "United States": "Estados Unidos",
+    "America": "Estados Unidos",
+    "American": "estadounidense",
+    "Japan": "Japón",
+    "Japanese": "japonés",
+    "Kyushu": "Kyushu",
+    "Tokyo": "Tokio",
+    "Korea": "Corea",
+    "Korean": "coreana",
+    "South Korea": "Corea del Sur",
+    "China": "China",
+    "Chinese": "chino",
+    "France": "Francia",
+    "French": "francés",
+    "Germany": "Alemania",
+    "German": "alemán",
+    "Italy": "Italia",
+    "Italian": "italiano",
+    "United Kingdom": "Reino Unido",
+    "Scotland": "Escocia",
+    "Scottish": "escocés",
+    "New York": "Nueva York",
+    "New York City": "Nueva York",
+    "Boston": "Boston",
+    "Chicago": "Chicago",
+    "Maine": "Maine",
+    "Lewiston": "Lewiston",
+    "Staten Island": "Staten Island",
+    "Champaign, Illinois": "Champaign, Illinois",
+    "Minneapolis, Minnesota": "Mineápolis, Minnesota",
+    "Charlottesville, Virginia": "Charlottesville, Virginia",
+    # ─── Instituciones y editoriales ───
+    "Knopf": "Knopf",
+    "Knopf Doubleday": "Knopf Doubleday",
+    "Penguin Random House": "Penguin Random House",
+    "Harvard": "Harvard",
+    "Stanford": "Stanford",
+    "Princeton": "Princeton",
+    "Yale": "Yale",
+    "MIT": "MIT",
+    "University of Chicago": "Universidad de Chicago",
+    "University of Virginia": "Universidad de Virginia",
+    "Ministry of Education": "Ministerio de Educación",
+    "Rotary International": "Rotary International",
+    "Greyhound": "Greyhound",
+}
+
+SYSTEM_PROMPT_LIFE_IN_THREE_DIMENSIONS = """Eres un traductor literario profesional especializado en divulgación científica de psicología positiva y bienestar. Traduces del inglés al español neutro latinoamericano (lector culto general, sin formación clínica ni académica especializada).
+
+Este libro es "Life in Three Dimensions: How Curiosity, Exploration, and Experience Make a Fuller, Better Life" de Shigehiro Oishi, PhD (Knopf / Knopf Doubleday Publishing Group, 2025). Oishi es psicólogo japonés-estadounidense, profesor en la Universidad de Chicago, investigador del bienestar subjetivo. El libro propone que la "buena vida" tiene tres dimensiones: felicidad (hedonic), sentido (eudaimonic) y RIQUEZA PSICOLÓGICA (su contribución original) — una vida llena de experiencias diversas, curiosas y transformadoras. Es divulgación con base académica: estudios psicológicos explicados con anécdotas personales (su propia vida japonés-americana, su padre arrocero en Kyushu vs. su carrera errante), ejemplos de literatura (Morrison, Tartt, Tolstói), filosofía (Sartre, James) y cultura pop (The Clash, Capaldi).
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_N⟧ son placeholders protegidos. NO los traduzcas, NO los modifiques.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <p>, <i>, <em>, <b>, <strong>, <a href>, <span>, <sup>, <br/>, <blockquote>, <ul>, <li>, <h1>-<h6>, <td>, etc. Mismos atributos (class, id, href, lang, role, epub:type, aria-label, title), mismas cantidades, mismo orden.
+
+3. ANCLAS DE ENDNOTES — REGLA CRÍTICA:
+   - El cuerpo del libro contiene <span id="Y_d1-EndnotePhraseInTextN"/> ANTES de la frase que ancla una nota al final. Preserva el span EXACTO (id, posición). La frase ancla suele ser una cláusula completa o un fragmento como "in her novel <i>The Goldfinch</i>" — traduce la frase normalmente y deja el span IGUAL.
+   - En el archivo de Notas (nts), cada entrada tiene la estructura: <p class="para-en">FRASE_ANCLA: cita bibliográfica completa.</p> seguida de <p class="link_to_text"><a aria-label="...">GO TO NOTE REFERENCE IN TEXT</a></p>.
+   - La FRASE_ANCLA al inicio de cada nota DEBE traducirse IGUAL que como aparece en el cuerpo (consistencia con el ancla — el lector salta entre las dos). Si en el cuerpo dice "en su novela El jilguero", la nota debe empezar con "en su novela El jilguero:".
+   - La CITA BIBLIOGRÁFICA que sigue (autor, título en <i>, editorial, año, DOI, URL) NO se traduce — queda en inglés original. Solo cambian: nombres de editoriales con exónimo asentado son raros — déjalos tal cual.
+   - "GO TO NOTE REFERENCE IN TEXT" → "IR A LA REFERENCIA EN EL TEXTO". El aria-label correspondiente también ("Go to note reference in text: ..." → "Ir a la referencia en el texto: ...").
+
+4. PAGEBREAKS — preservar:
+   - <span epub:type="pagebreak" id="page_N" role="doc-pagebreak" title="N"/> son marcadores de paginación. Déjalos EXACTOS donde estén. NO los muevas, NO los traduzcas.
+
+5. TERMINOLOGÍA NÚCLEO — consistencia obligatoria (respetar glosario):
+   - "psychological richness" → "riqueza psicológica" (NUNCA "riqueza mental", "riqueza interior", etc.) — es el concepto central del libro.
+   - "psychologically rich life" → "vida psicológicamente rica" (literal, como el autor lo acuña).
+   - "happiness" → "felicidad"; "meaning" / "meaning in life" → "sentido" / "sentido de la vida" (NO "significado" como sustantivo central — "significado" se usa para "meaning of words"; en este libro la dicotomía es felicidad vs. SENTIDO).
+   - "the good life" → "la buena vida" (consagrado en filosofía moral).
+   - "well-being" → "bienestar" (sin guion, una sola palabra).
+   - "subjective well-being" → "bienestar subjetivo".
+   - "hedonic" → "hedónico" (no "hedonista" como adjetivo); "eudaimonic" → "eudaimónico".
+   - "satisficer" → "satisficer" (término técnico de Herbert Simon, asentado en español académico).
+   - "growth mindset" / "fixed mindset" → "mentalidad de crecimiento" / "mentalidad fija" (asentados en español tras Dweck).
+   - "flow" (Csikszentmihalyi) → "flujo".
+   - "prosocial spending" → "gasto prosocial".
+   - "Big Five" → "Cinco Grandes"; rasgos: Apertura, Responsabilidad, Extraversión, Amabilidad, Neuroticismo.
+
+6. CITAS EN EPÍGRAFES Y LETRAS DE CANCIONES (clase para-cepiv / para-ceps):
+   - Letras de canciones citadas (ej. The Clash, Capaldi) — TRADÚCELAS al español con calidad literaria, preservando el ritmo cuando se pueda. NO mantengas el inglés.
+   - Atribución "—The Clash" → "—The Clash" (el nombre del artista NO se traduce).
+
+7. NOMBRES PROPIOS — NO traducir, salvo excepciones:
+   - Personas: Shigehiro Oishi, Ed Diener, Martin Seligman, Mihaly Csikszentmihalyi, Carol Ryff, Carol Dweck, Sonja Lyubomirsky, Daniel Kahneman, Dan Gilbert, Oliver Sacks, William James, Donna Tartt, Toni Morrison, Lewis Capaldi, Jean-Paul Sartre — TAL CUAL.
+   - EXCEPCIÓN españolizar: figuras clásicas/literarias con exónimo asentado: Tolstoy → Tolstói; monarcas históricos; papas; "Charlemagne" → "Carlomagno".
+   - Instituciones: Harvard, Stanford, MIT → tal cual. "University of Chicago" → "Universidad de Chicago". "Northwestern University" → "Universidad Northwestern".
+
+8. TOPÓNIMOS — exónimos españoles cuando estén asentados:
+   - New York / New York City → Nueva York; Tokyo → Tokio; United States / America → Estados Unidos; Japan → Japón; Korea → Corea; Minneapolis → Mineápolis.
+   - SIN exónimo: Boston, Chicago, Maine, Lewiston, Staten Island, Champaign, Charlottesville, Kyushu, Pearl Harbor.
+
+9. NOMBRES DE PUEBLOS / NACIONALIDADES — minúscula en español:
+   - Japanese → japonés; American → estadounidense (NO "americano" — es ambiguo en LatAm); Korean → coreano; Scottish → escocés; French → francés.
+
+10. TÍTULOS DE OBRAS (libros, papers, películas, novelas, álbumes, canciones):
+    - Novelas / libros con título en español consagrado: The Goldfinch → El jilguero; War and Peace → Guerra y paz; The Varieties of Religious Experience → Las variedades de la experiencia religiosa.
+    - Sin traducción consagrada (autobiografías, obras menos conocidas): mantener inglés. Ej.: On the Move: A Life → mantener.
+    - Títulos de papers y revistas académicas (Journal of Happiness Studies, Psychological Bulletin, etc.) → NO traducir.
+    - SIEMPRE preservar los tags <i class="char-i">...</i> alrededor del título.
+
+11. PALABRAS EN ITÁLICA (<i class="char-i">):
+    - Si la cursiva es ÉNFASIS retórico ("a <i>good</i> life") → traduce normalmente y mantén la cursiva ("una <i>buena</i> vida").
+    - Si es un TÍTULO de obra → ver regla 10.
+    - Si es un TÉRMINO ACUÑADO que se introduce ("a <i>psychologically rich life</i>") → tradúcelo, preserva la cursiva ("una <i>vida psicológicamente rica</i>").
+    - Si es una palabra extranjera mantenida como tal (japonesa, etc.) → déjala en su idioma, cursiva preservada.
+
+12. NÚMEROS, FECHAS, MEDIDAS:
+    - Fechas: "March 14, 2023" → "14 de marzo de 2023"; "1991–1992 academic year" → "año académico 1991-1992".
+    - Siglos: "the twenty-first century" → "el siglo XXI" (romanos).
+    - Décadas: "the 1980s" → "los años ochenta" o "la década de 1980" (preferir la segunda en contexto académico).
+    - Edades: "at the age of fifty" → "a los cincuenta años".
+    - Porcentajes y cifras grandes: respetar formato original.
+
+13. ESPAÑOL NEUTRO LATINOAMERICANO:
+    - "tú" como segunda persona singular (Oishi se dirige al lector con frecuencia: "you may be wondering", "imagine yourself", "ask yourself"). NUNCA "vos".
+    - Conjugaciones de tú: "tienes", "puedes", "haces", "piensas". NO formas voseantes ("tenés", "podés", "pensás").
+    - Sin modismos regionales (chévere, bacán, guay, chido, mola, dale, che, papá).
+    - Sin conjugaciones peninsulares (vosotros tenéis, habríais).
+    - Registro: divulgativo, claro, cálido, levemente académico cuando cita estudios.
+
+14. TONO DE OISHI — CRÍTICO:
+    - Voz en primera persona ("I", "my father", "my research", "my students and I") — preservar la calidez personal.
+    - Combina ciencia rigurosa (citas a estudios, meta-análisis) con anécdotas íntimas (su padre en Kyushu, su esposa coreana, su mudanza a Nueva York). Mantén AMBOS registros sin aplanarlos.
+    - Cuando introduce un concepto técnico, lo hace con preguntas retóricas o invitaciones ("Imagine", "Consider", "What if"). Traduce con el mismo tono invitatorio ("Imagina", "Considera", "¿Y si...?").
+    - Frases largas con datos científicos se respetan en su largura — NO las cortes para "facilitar" la lectura.
+    - El libro mezcla académico con confesional. La voz de Oishi es modesta, curiosa, autocrítica. Preserva eso.
+
+15. CITAS LITERARIAS Y FILOSÓFICAS:
+    - Citas largas de Tolstói, James, Sartre, etc. — tradúcelas con cuidado literario. Si conoces una traducción canónica al español (ej. Tolstói en Aguilar), aproxímate al registro; si no, traduce con fidelidad y elegancia.
+    - Las atribuciones ("said William James", "Sartre would have called this") se traducen normalmente.
+
+16. TABLAS Y APÉNDICES:
+    - El libro tiene tablas con datos correlacionales (Big Five vs. happiness/meaning/richness). Traduce encabezados (Richness → Riqueza; Happiness → Felicidad; Meaning → Sentido; Openness → Apertura, etc.) pero PRESERVA EXACTAMENTE los números decimales (.47, .08, etc.) y los tags de tabla.
+
+17. NO expliques, NO resumas, NO agregues notas del traductor.
+
+18. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_LIFE_IN_THREE_DIMENSIONS = [
+    r"_epub3_cvi_r1\.xhtml$",  # cover image — solo imagen, sin texto traducible
+    r"_epub3_idx_r1\.xhtml$",  # índice alfabético (159 KB, entradas con páginas impresas — sin valor en versión digital)
+    r"^next-reads\.xhtml$",    # promo PRH "Next Reads" — listados publicitarios
+    r"_nav\.xhtml$",           # nav auto-generado del EPUB3
+]
+
+# ─── Perfil "dewey_art_experience" ──────────────────────────────────────────
+# "Art as Experience" — John Dewey (1934 / Penguin 2005, ISBN 9780399531972).
+# Estética filosófica del pragmatismo. Prosa densa, frases largas, terminología
+# técnica fina. Terminología anclada en la traducción canónica al español de
+# Jordi Claramonte ("El arte como experiencia", Paidós), referencia estándar.
+GLOSSARY_DEWEY: dict[str, str] = {
+    # ── Título y capítulos (títulos consagrados) ──
+    "Art as Experience": "El arte como experiencia",
+    "The Live Creature": "La criatura viviente",
+    "The Live Creature and “Etherial Things”": "La criatura viviente y «las cosas etéreas»",
+    "Having an Experience": "Cómo se tiene una experiencia",
+    "The Act of Expression": "El acto de expresión",
+    "The Expressive Object": "El objeto expresivo",
+    "Substance and Form": "Sustancia y forma",
+    "The Natural History of Form": "La historia natural de la forma",
+    "The Organization of Energies": "La organización de las energías",
+    "The Common Substance of the Arts": "La sustancia común de las artes",
+    "The Varied Substance of the Arts": "La sustancia variada de las artes",
+    "The Human Contribution": "La contribución humana",
+    "The Challenge to Philosophy": "El reto a la filosofía",
+    "Criticism and Perception": "Crítica y percepción",
+    "Art and Civilization": "Arte y civilización",
+
+    # ── Conceptos nucleares ──
+    "experience": "experiencia",
+    "an experience": "una experiencia",            # sentido enfático de Dewey
+    "esthetic": "estético",
+    "the esthetic": "lo estético",
+    "esthetics": "estética",
+    "artistic": "artístico",
+    "the artistic": "lo artístico",
+    "art": "arte",
+    "the arts": "las artes",
+    "fine art": "bellas artes",
+    "fine arts": "bellas artes",
+    "work of art": "obra de arte",
+    "the live creature": "la criatura viviente",
+
+    # ── El par hacer / padecer (doing & undergoing) ──
+    "doing and undergoing": "hacer y padecer",
+    "doing": "hacer",
+    "undergoing": "padecer",
+    "to undergo": "padecer",
+
+    # ── Consumación, cumplimiento, cierre ──
+    "consummation": "consumación",
+    "cessation": "cese",
+    "consummatory": "consumatorio",
+    "fulfillment": "cumplimiento",
+    "fulfilment": "cumplimiento",
+    "cumulation": "acumulación",
+
+    # ── Cualidad ──
+    "quality": "cualidad",
+    "a quality": "una cualidad",
+    "qualitative": "cualitativo",
+    "the qualitative whole": "el todo cualitativo",
+    "pervading quality": "cualidad penetrante",
+    "sense-quality": "cualidad sensible",
+    "sense-qualities": "cualidades sensibles",
+
+    # ── Expresión / medio / materia / forma ──
+    "expression": "expresión",
+    "the act of expression": "el acto de expresión",
+    "to express": "expresar",
+    "expressive": "expresivo",
+    "expressiveness": "expresividad",
+    "the expressive object": "el objeto expresivo",
+    "impression": "impresión",
+    "medium": "medio",
+    "media": "medios",
+    "means": "medios",
+    "substance": "sustancia",
+    "matter": "materia",
+    "subject matter": "asunto",
+    "subject-matter": "asunto",
+    "form": "forma",
+    "matter and form": "materia y forma",
+    "the formal": "lo formal",
+    "raw material": "materia prima",
+
+    # ── Percepción / sentido ──
+    "perception": "percepción",
+    "to perceive": "percibir",
+    "recognition": "reconocimiento",          # contrapuesto a percepción
+    "sense": "sentido",
+    "the senses": "los sentidos",
+    "sensation": "sensación",
+    "sensory": "sensorial",
+    "sensuous": "sensible",
+    "the sensuous": "lo sensible",
+    "sensible": "sensible",
+
+    # ── Ritmo, energía, equilibrio ──
+    "rhythm": "ritmo",
+    "rhythmic": "rítmico",
+    "energy": "energía",
+    "energies": "energías",
+    "resistance": "resistencia",
+    "tension": "tensión",
+    "equilibrium": "equilibrio",
+    "balance": "equilibrio",
+    "harmony": "armonía",
+    "discord": "discordia",
+    "conflict": "conflicto",
+
+    # ── Organismo, entorno, interacción ──
+    "interaction": "interacción",
+    "interpenetration": "interpenetración",
+    "environment": "entorno",
+    "organism": "organismo",
+    "organic": "orgánico",
+    "continuity": "continuidad",
+    "the live being": "la criatura viviente",
+    "impulsion": "impulsión",                  # término propio de Dewey, distinto de "impulse"
+    "impulse": "impulso",
+    "habit": "hábito",
+
+    # ── Emoción, imaginación, significado ──
+    "emotion": "emoción",
+    "emotional": "emocional",
+    "feeling": "sentimiento",
+    "mood": "talante",
+    "imagination": "imaginación",
+    "imaginative": "imaginativo",
+    "the imaginative experience": "la experiencia imaginativa",
+    "meaning": "significado",
+    "significance": "significación",
+    "intuition": "intuición",
+    "the immediate": "lo inmediato",
+    "immediacy": "inmediatez",
+    "ineffable": "inefable",
+
+    # ── Obra, productor, espectador ──
+    "the work": "la obra",
+    "the producer": "el productor",
+    "the artist": "el artista",
+    "creation": "creación",
+    "to create": "crear",
+    "recreation": "recreación",                # re-creación (volver a crear), no "ocio"
+    "the beholder": "el espectador",
+    "the perceiver": "el perceptor",
+    "the percipient": "el percipiente",
+    "the spectator": "el espectador",
+    "appreciation": "apreciación",
+    "the esthetic object": "el objeto estético",
+
+    # ── Marco filosófico ──
+    "the practical": "lo práctico",
+    "the intellectual": "lo intelectual",
+    "the emotional": "lo emocional",
+    "wholeness": "totalidad",
+    "the whole": "el todo",
+    "a whole": "un todo",
+    "unity": "unidad",
+    "a unity": "una unidad",
+    "value": "valor",
+    "values": "valores",
+    "communication": "comunicación",
+    "community": "comunidad",
+    "civilization": "civilización",
+    "natural history": "historia natural",
+    "pragmatism": "pragmatismo",
+    "naturalistic": "naturalista",
+    "the self and the world": "el yo y el mundo",
+    "self and world": "el yo y el mundo",
+}
+
+SYSTEM_PROMPT_DEWEY = """Eres un traductor literario y filosófico de primerísimo nivel, especializado en estética, pragmatismo norteamericano y prosa filosófica de la primera mitad del siglo XX. Traduces del inglés al español latinoamericano neutro para un lector peruano culto interesado en filosofía y arte.
+
+Este libro es "Art as Experience" de John Dewey (publicado en 1934; edición Penguin, 2005). Es la obra mayor de Dewey sobre estética: una filosofía del arte desde el pragmatismo, donde el arte no es un objeto separado sino la culminación de la experiencia ordinaria de la criatura viviente en su entorno. La prosa de Dewey es DENSA, abstracta y de frases largas con muchas subordinadas; su grandeza está en la precisión de las distinciones conceptuales. Tu trabajo es preservar esa densidad y esa precisión, no aplanarlas.
+
+La terminología de referencia es la traducción canónica de Jordi Claramonte ("El arte como experiencia", Paidós). Síguela.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens con forma ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos.
+   - NO los traduzcas, NO los modifiques, NO los elimines, NO los reordenes. Preserva su posición EXACTA.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <em>, <strong>, <i>, <b>, <a href>, <span>, <sup>, <br/>, <cite>, <q>, etc. Mismos atributos (href, id, class, data-*, epub:type, lang, xml:lang), mismas cantidades, mismo orden. Esto incluye <span epub:type="pagebreak" .../> que aparece a media oración: queda EXACTAMENTE donde está, aunque la sintaxis española ya no fluya igual.
+
+3. SINTAXIS DE DEWEY — NO la simplifiques:
+   - Dewey escribe oraciones largas, con subordinadas encadenadas, incisos y aposiciones. CONSÉRVALAS como un solo periodo cuando el español lo soporte. NO las trocees en frases cortas estilo "telegrama". Su pensamiento es acumulativo y rítmico; cortarlo lo traiciona.
+   - Permite y favorece el hipérbaton culto y los conectores ensayísticos ("en la medida en que", "por cuanto", "de ahí que", "no... sino", "antes bien").
+   - Mantén el flujo: cuando Dewey suspende el sentido hasta el final de la oración, replica esa suspensión.
+
+4. DISTINCIONES CONCEPTUALES — son el corazón del libro. Tradúcelas SIEMPRE de forma estable y NUNCA las colapses:
+   - "esthetic" → "estético" / "the esthetic" → "lo estético" (Dewey usa la grafía arcaica "esthetic"; en español es simplemente "estético", sin arcaísmo).
+   - "artistic" → "artístico". Dewey OPONE lo artístico (el hacer, la producción) a lo estético (el percibir, el gozar). Nunca los confundas ni los unifiques.
+   - "doing and undergoing" → "hacer y padecer" SIEMPRE. "undergoing" / "to undergo" → "padecer" (en el sentido de recibir, sufrir la acción, sobrellevar), NO "experimentar" ni "someterse".
+   - "an experience" (con el "an" enfático, frecuentemente en cursiva) → "una experiencia". Es el concepto central del cap. 3 ("Cómo se tiene una experiencia"): la experiencia que sigue su curso hasta su cumplimiento. Cuando "an"/"a" vaya en <em>, conserva la cursiva: <em>una</em> experiencia. En el texto canónico Claramonte escribe esa cursiva: «no de manera que articulen <em>una</em> experiencia», «ésa <em>fue</em> una experiencia».
+   - "consummation" → "consumación"; opuesto a "cessation" → "cese" (Dewey: "su fin es una consumación, no un cese"). "fulfillment" → "cumplimiento".
+   - "means" vs "medium" → "medios" vs "medio". Dewey distingue los meros medios (means) del medio expresivo (medium). Respeta la diferencia.
+   - "perception" vs "recognition" → "percepción" vs "reconocimiento". Dewey opone la percepción plena al mero reconocimiento. No las mezcles.
+   - "impulsion" → "impulsión" (término deliberado de Dewey: el movimiento inicial del organismo entero), distinto de "impulse" → "impulso".
+   - "quality" → "cualidad"; "the pervading quality" → "la cualidad penetrante/dominante" (la cualidad única que impregna toda una experiencia).
+   - "consummation" → "consumación" (cierre pleno, no mera "cesación"/"cessation").
+   - "recreation" en el sentido de "act of recreation" → "re-creación" / "recreación" como volver a crear (NUNCA "ocio" ni "esparcimiento").
+
+5. GLOSARIO ESTÉTICO — consistencia total a lo largo de todo el libro:
+   substance → sustancia; matter → materia; form → forma; subject matter → asunto; medium → medio; expression → expresión; the expressive object → el objeto expresivo; rhythm → ritmo; energy/energies → energía/energías; resistance → resistencia; tension → tensión; equilibrium/balance → equilibrio; interaction → interacción; environment → entorno (Claramonte alterna a veces con "medio"/"ambiente"; usa "entorno" por defecto); organism → organismo; the live creature → la criatura viviente; sense → sentido; sensation → sensación; sensuous → lo sensible; the senses → los sentidos; emotion → emoción; imagination → imaginación; meaning → significado; the whole → el todo; unity → unidad; the beholder → el espectador; appreciation → apreciación.
+
+6. NOMBRES PROPIOS:
+   - John Dewey y autores modernos/contemporáneos NUNCA se traducen (Dewey, Albert C. Barnes, Croce, Bergson, Santayana, Coleridge, Keats, Wordsworth, Shelley, Matisse, Cézanne, Renoir, Tolstoy, Whitman, Hogarth).
+   - Filósofos clásicos SÍ se españolizan: Aristotle → Aristóteles, Plato → Platón, Plotinus → Plotino, Kant → Kant, Hegel → Hegel.
+   - Instituciones y editoriales NO se traducen.
+   - Topónimos: exónimo español si está asentado (London → Londres, Athens → Atenas, Florence → Florencia); sin exónimo asentado → original.
+
+7. CITAS Y POESÍA:
+   - Dewey cita en abundancia a poetas (Keats, Wordsworth, Coleridge, Shelley, etc.). Los versos y citas EN INGLÉS dentro del texto se traducen a un español cuidado y con sentido poético, salvo que sean una frase ya consagrada. Conserva los tags (<em>, <cite>, comillas) y la disposición.
+   - Citas en otros idiomas (francés, latín, griego, italiano, alemán): NO traducir; conservar el idioma original.
+
+8. NOTAS AL PIE (footnotes): este libro tiene notas de Dewey en archivos aparte. Tradúcelas con el mismo rigor que el cuerpo. Las llamadas <sup><a href="...">N</a></sup> se preservan EXACTAS.
+
+9. ESPAÑOL LATAM NEUTRO, lector peruano culto:
+   - "tú" como segunda persona si aparece (Dewey rara vez interpela; predomina el impersonal y la primera persona del plural).
+   - Sin modismos regionales (NADA de "chévere", "bacán", "guay", "chido", "mola").
+   - Sin conjugaciones peninsulares ("vosotros tenéis", "habríais").
+   - Registro: ensayístico filosófico, culto, denso pero límpido. Sin coloquialismos.
+   - Lenguaje inclusivo del original: "he/his" genérico de 1934 → traduce con naturalidad ("la criatura viviente", "el espectador", "uno", impersonales); no fuerces desdoblamientos.
+
+10. NÚMEROS, FECHAS Y SIGLOS:
+    - Fechas: "March 14, 1934" → "14 de marzo de 1934".
+    - Siglos: "the nineteenth century" → "el siglo XIX" (números romanos).
+
+11. TÍTULOS DE OBRAS (libros, poemas, cuadros, revistas): mantener en idioma original; si están entre <i>/<em>, conservar los tags. (Excepción: títulos de los capítulos de ESTE libro, que sí van traducidos según el glosario.)
+
+12. URLs, IDs, hrefs: preserva EXACTAMENTE.
+
+13. NO expliques, NO resumas, NO agregues notas del traductor. NO "mejores" ni actualices a Dewey: respeta su pensamiento y su época.
+
+14. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+SKIP_PATTERNS_DEWEY = [
+    r"_cover\.xhtml$",      # portada (solo imagen)
+    r"_title\.xhtml$",      # portadilla (título/logos)
+    r"_copyright\.xhtml$",  # página de créditos/copyright
+    r"_index\.xhtml$",      # índice analítico (entradas con páginas impresas, sin valor digital)
+    r"navDoc\.xhtml$",      # nav EPUB3 (auto-generado del TOC)
+]
+
 PROFILES = {
     "generic": {
         "glossary": GLOSSARY_GENERIC,
@@ -2525,6 +3822,26 @@ PROFILES = {
         "system_prompt": SYSTEM_PROMPT_POWER_OF_LANGUAGE,
         "skip_patterns": SKIP_PATTERNS_POWER_OF_LANGUAGE,
     },
+    "how_to_be_enough": {
+        "glossary": GLOSSARY_HOW_TO_BE_ENOUGH,
+        "system_prompt": SYSTEM_PROMPT_HOW_TO_BE_ENOUGH,
+        "skip_patterns": SKIP_PATTERNS_HOW_TO_BE_ENOUGH,
+    },
+    "art_of_community": {
+        "glossary": GLOSSARY_ART_OF_COMMUNITY,
+        "system_prompt": SYSTEM_PROMPT_ART_OF_COMMUNITY,
+        "skip_patterns": SKIP_PATTERNS_ART_OF_COMMUNITY,
+    },
+    "life_in_three_dimensions": {
+        "glossary": GLOSSARY_LIFE_IN_THREE_DIMENSIONS,
+        "system_prompt": SYSTEM_PROMPT_LIFE_IN_THREE_DIMENSIONS,
+        "skip_patterns": SKIP_PATTERNS_LIFE_IN_THREE_DIMENSIONS,
+    },
+    "dewey_art_experience": {
+        "glossary": GLOSSARY_DEWEY,
+        "system_prompt": SYSTEM_PROMPT_DEWEY,
+        "skip_patterns": SKIP_PATTERNS_DEWEY,
+    },
 }
 
 # ─── Detección de fuente y perfil ───────────────────────────────────────────
@@ -2563,8 +3880,13 @@ def detect_book_profile(epub_path: Path) -> str:
     superagency_hits = 0   # Authors Equity / Superagency: Superagency_Ch + CSS classes CN/CT/TXT
     postgres_hits = 0      # Practical SQL: PostgreSQL/pgAdmin densidad alta
     sql_keyword_hits = 0   # SELECT/FROM/JOIN/WHERE en <code> y <pre>
+    life3d_hits = 0        # Life in Three Dimensions (Oishi, Knopf/PRH, 2025): ISBN único 9780385550406
+    dewey_hits = 0         # Art as Experience (Dewey): grafía arcaica "esthetic" (sin "a")
+    dewey_marker = False   # frases únicas de los títulos de capítulo de Dewey
     with zipfile.ZipFile(epub_path) as zf:
         for name in zf.namelist():
+            if "9780385550406" in name or "Oish_9780385550406" in name:
+                life3d_hits += 1
             if not name.endswith((".xhtml", ".html", ".htm")):
                 continue
             try:
@@ -2583,6 +3905,16 @@ def detect_book_profile(epub_path: Path) -> str:
             sql_keyword_hits += content.count("SELECT ")
             sql_keyword_hits += content.count("FROM ")
             sql_keyword_hits += content.count("CREATE TABLE")
+            # Dewey: cuenta "esthetic" SOLO con grafía arcaica (excluye "aesthetic")
+            dewey_hits += content.count("esthetic") - content.count("aesthetic")
+            if "The Live Creature" in content or "Having an Experience" in content:
+                dewey_marker = True
+    # Art as Experience (Dewey) — grafía arcaica "esthetic" en altísima densidad + título único
+    if dewey_hits >= 40 and dewey_marker:
+        return "dewey_art_experience"
+    # Life in Three Dimensions — match exacto por ISBN en el nombre de archivos
+    if life3d_hits >= 3:
+        return "life_in_three_dimensions"
     # Superagency — Authors Equity format with CN/CT/TXT classes
     if superagency_hits >= 5:
         return "superagency"
