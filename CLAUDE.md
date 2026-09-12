@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-CLI tool that translates EPUB books from English to Latin American Spanish (es-419) using the Claude Agent SDK. Runs on Claude Max subscription (no API billing). Single-file Python application (`translate_epub.py`, ~1450 lines).
+CLI tool that translates EPUB books from English to Latin American Spanish (es-419) using the Claude Agent SDK. Runs on Claude Max subscription (no API billing). Single-file Python application (`translate_epub.py`, ~4,840 lines).
 
 ## Commands
 
@@ -13,8 +13,21 @@ CLI tool that translates EPUB books from English to Latin American Spanish (es-4
 python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 
-# Run translation (interactive menu if multiple EPUBs present)
+# 1. Drop the source EPUB in the project ROOT (this is the inbox — see Repository Layout)
+cp ~/Downloads/some_book.epub .
+
+# 2. Run translation (interactive menu if several EPUBs sit in the root)
 python3 translate_epub.py
+
+# 3. File the output away when the run finishes
+mv some_book_es.epub libros/traducidos/
+mv some_book.epub    libros/originales/
+
+# Live progress of a running translation (reads progress.json + newest log)
+python3 dashboard.py
+
+# Enrich an already-translated book (reading guides + concept maps)
+python3 enrich_epub.py libros/traducidos/some_book_es.epub
 ```
 
 There are no tests, linting, or build steps configured.
@@ -45,13 +58,29 @@ There are no tests, linting, or build steps configured.
 
 Each profile provides three things: `GLOSSARY_*`, `SYSTEM_PROMPT_*`, `SKIP_PATTERNS_*`. Registered in the `PROFILES` dict.
 
-| Profile | Target | Glossary size |
-|---------|--------|---------------|
-| `generic` | Literary non-fiction (Seth Godin) | ~15 terms |
-| `ai_engineering` | O'Reilly ML/AI technical | ~70+ terms |
-| `grokking_algorithms` | Manning CS illustrated | ~130+ terms |
-| `superagency` | AI/society non-fiction | — |
-| `practical_sql` | No Starch SQL technical | — |
+| Profile | Target | Glossary |
+|---------|--------|----------|
+| `generic` | Literary non-fiction (Seth Godin) | 17 |
+| `ai_engineering` | O'Reilly ML/AI technical | 64 |
+| `grokking_algorithms` | Manning CS illustrated | 92 |
+| `superagency` | AI/society non-fiction | 69 |
+| `practical_sql` | No Starch SQL technical | 246 |
+| `bismarck` | Political biography / German history | 383 |
+| `slow_looking` | Art observation / pedagogy | 171 |
+| `the_score` | Narrative non-fiction | 208 |
+| `lake_como` | Travel / place writing | 145 |
+| `power_of_language` | Linguistics / popular science | 191 |
+| `how_to_be_enough` | Clinical psychology (WPS markup) | 192 |
+| `art_of_community` | Leadership / belonging (Berrett-Koehler) | 205 |
+| `life_in_three_dimensions` | Psychology (Knopf/PRH, heavy endnotes) | 264 |
+| `dewey_art_experience` | Philosophy/aesthetics (anchored to the Claramonte translation) | 137 |
+| `crossan_jesus` | Biblical scholarship (omnibus: only book B1 is translated) | 116 |
+
+Re-check this list against the code with the venv interpreter (the system `python3` has no `bs4`):
+
+```bash
+.venv/bin/python3 -c "import translate_epub as t; print(len(t.PROFILES), list(t.PROFILES))"
+```
 
 ### Key Constants (top of file)
 
@@ -88,8 +117,61 @@ more translated content
 3. Define `SKIP_PATTERNS_<name>`: `list[str]` of regex patterns for files to skip
 4. Register in `PROFILES` dict
 
-## Working Directories
+## Repository Layout
 
-- `./work/` — extracted EPUB contents (transient, recreated each run)
-- `./progress.json` — translation checkpoint (delete to restart)
-- Output: `<original_name>_es.epub` in project root
+The root is the **inbox**, not a library. `find_source_epub` calls
+`PROJECT_DIR.glob("*.epub")` — **not recursive** — so only EPUBs sitting directly in
+the root show up in the selection menu. Everything already processed is filed away:
+
+```
+.
+├── translate_epub.py        main pipeline (single file)
+├── enrich_epub.py           reading guides + concept maps for a translated EPUB
+├── dashboard.py             live TUI for a running translation
+├── enrichment.css           styles injected by enrich_epub.py
+├── queue_next.sh            one-off chaining script from April (obsolete; see note)
+├── progress.json            ACTIVE checkpoint — the pipeline reads/writes it here
+├── work/                    ACTIVE extraction dir — recreated each run
+│
+├── libros/
+│   ├── originales/          source EPUBs in English
+│   ├── traducidos/          deliverables: *_es.epub and Spanish-titled files
+│   └── intermedios/         *_pre_*, *_vN, *_clean, *_fixed, *.bak, .azw3, conversion logs
+├── logs/                    translate_*.log, run.log, enrich_run.log
+├── estado/                  archived progress_*.json from finished books
+├── scripts/                 one-off repair scripts (see below)
+└── por-borrar/              discard candidates, kept until reviewed by hand
+```
+
+### Where things go
+
+| What | Where | Why |
+|------|-------|-----|
+| EPUB you want to translate next | project root | the menu only globs the root |
+| Finished `*_es.epub` | `libros/traducidos/` | keeps the menu clean for the next run |
+| Its English source | `libros/originales/` | same reason |
+| `progress.json` of a finished book | `estado/progress_<book>_done.json` | frees the name for the next run |
+| `progress.json` of the run in flight | project root | hardcoded as `PROJECT_DIR / "progress.json"` |
+
+### Path assumptions baked into the code
+
+- `translate_epub.py`: `PROJECT_DIR = Path(__file__).parent`, `WORK_DIR = PROJECT_DIR / "work"`,
+  `PROGRESS_FILE = PROJECT_DIR / "progress.json"`. Output is written to
+  `PROJECT_DIR / (source.stem + "_es.epub")` — i.e. the root, then moved by hand.
+- `dashboard.py` looks for logs in the root **and** in `logs/`.
+- `enrich_epub.py` looks for `*_es.epub` in the root **and** in `libros/traducidos/`.
+- `scripts/*` live one level down and resolve the project root as
+  `Path(__file__).parent.parent`; the Python ones insert it into `sys.path` before
+  `import translate_epub`. Keep that line if you add a new script there.
+- `queue_next.sh` still assumes the pre-reorg layout (it runs `touch TheScore.epub` in the
+  root). Don't run it as-is — it would create an empty EPUB in the inbox.
+
+### Identifying a book's language
+
+File names lie: `Life in three dimensions.epub` is a renamed *translation*. Read the OPF
+instead before filing anything:
+
+```bash
+unzip -p book.epub $(unzip -l book.epub | grep -oE '[^ ]+\.opf' | head -1) \
+  | grep -oE '<dc:language[^>]*>[^<]*'
+```
