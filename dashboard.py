@@ -90,7 +90,7 @@ class State:
 
 def find_latest_log() -> Path | None:
     candidates = sorted(
-        PROJECT_DIR.glob("translate*.log"),
+        [*PROJECT_DIR.glob("translate*.log"), *(PROJECT_DIR / "logs").glob("*.log")],
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )

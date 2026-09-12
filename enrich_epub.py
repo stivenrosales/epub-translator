@@ -19,7 +19,7 @@ Diseño (Aprobación B del brainstorming):
 
 Uso:
     python3 enrich_epub.py [ruta_al_epub_es.epub] [--force] [--only N]
-Si no se pasa ruta, toma el *_es.epub más reciente del directorio.
+Si no se pasa ruta, toma el *_es.epub más reciente (raíz o libros/traducidos/).
 Salida: <stem sin _es>_es_enriquecido.epub
 """
 from __future__ import annotations
@@ -309,7 +309,7 @@ def find_source_es_epub(argv_path: str | None) -> Path:
             sys.exit(f"✗ No existe: {p}")
         return p
     candidates = sorted(
-        PROJECT_DIR.glob("*_es.epub"),
+        [*PROJECT_DIR.glob("*_es.epub"), *(PROJECT_DIR / "libros/traducidos").glob("*_es.epub")],
         key=lambda p: p.stat().st_mtime,
         reverse=True,
     )

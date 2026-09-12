@@ -12,6 +12,9 @@ progress.json
 progress_*.json
 enrich_progress.json
 
+# ─── Carpeta de descarte (revisar y borrar a mano) ───────
+por-borrar/
+
 # ─── Logs ────────────────────────────────────────────────
 *.log
 
@@ -30,8 +33,9 @@ __pycache__/
 *.pyc
 *.pyo
 
-# ─── macOS / Editor ──────────────────────────────────────
+# ─── macOS / Editor / tooling ────────────────────────────
 .DS_Store
+.atl/
 .idea/
 .vscode/
 .claude/
