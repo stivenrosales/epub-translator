@@ -61,8 +61,8 @@ WORK_DIR = PROJECT_DIR / "work"
 PROGRESS_FILE = PROJECT_DIR / "progress.json"
 
 MODEL = "claude-sonnet-4-6"   # Último Sonnet. Si da problemas: "claude-sonnet-4-5"
-BATCH_SIZE = 25
-CONCURRENCY = 6
+BATCH_SIZE = 15      # 15 > 25 en confiabilidad: batches grandes omitían bloques
+CONCURRENCY = 10     # llamadas SDK simultáneas (sube a 12-14 si no hay rate limits)
 
 # Forzar perfil manualmente: "generic", "ai_engineering", "grokking_algorithms", "superagency", "practical_sql", "bismarck", "slow_looking", "the_score", "lake_como", "power_of_language", "how_to_be_enough", o None (auto-detect)
 FORCE_PROFILE: str | None = None
@@ -3771,6 +3771,237 @@ SKIP_PATTERNS_DEWEY = [
     r"navDoc\.xhtml$",      # nav EPUB3 (auto-generado del TOC)
 ]
 
+# ─── Perfil "crossan_jesus" ─────────────────────────────────────────────────
+# "Jesus: A Revolutionary Biography" — John Dominic Crossan (HarperOne, 1994).
+# Es el libro B1 del "John Dominic Crossan Essential Set" (ISBN del set:
+# 9780062358097); SOLO se traduce B1 (los archivos _B2_/_B3_/_B4_ se saltan).
+# Erudición histórico-crítica sobre el Jesús histórico: campesino judío
+# mediterráneo, comensalidad abierta, igualitarismo radical. Prosa académica
+# densa con citas bíblicas en cada página, latín/griego/hebreo y notas al pie.
+# Las citas bíblicas y la terminología teológica se anclan en la BIBLIA DE
+# JERUSALÉN (estándar académico católico en español). Título canónico español:
+# "Jesús: una biografía revolucionaria" (Grijalbo, 2004).
+GLOSSARY_CROSSAN: dict[str, str] = {
+    # ── Título y partes del libro ──
+    "Jesus: A Revolutionary Biography": "Jesús: una biografía revolucionaria",
+    "A Revolutionary Biography": "Una biografía revolucionaria",
+    "From Christ to Jesus": "Del Cristo a Jesús",
+    "From Jesus to Christ": "De Jesús al Cristo",
+
+    # ── Conceptos nucleares de Crossan (consagrados en la erudición en español) ──
+    "the historical Jesus": "el Jesús histórico",
+    "historical Jesus": "Jesús histórico",
+    "open commensality": "comensalidad abierta",
+    "commensality": "comensalidad",
+    "radical egalitarianism": "igualitarismo radical",
+    "egalitarian": "igualitario",
+    "a Mediterranean Jewish peasant": "un campesino judío mediterráneo",
+    "Mediterranean Jewish peasant": "campesino judío mediterráneo",
+    "peasant": "campesino",
+    "peasantry": "campesinado",
+    "honor and shame": "honor y vergüenza",
+    "magic and meal": "magia y comida",
+    "brokerless kingdom": "reino sin intermediarios",
+    "the brokerless kingdom of God": "el reino de Dios sin intermediarios",
+    "broker": "intermediario",
+    "brokered": "mediado por intermediarios",
+    "patronage": "patronazgo",
+    "patron-client": "patrón-cliente",
+    "patron and client": "patrón y cliente",
+    "client kingdom": "reino cliente",
+    "purity": "pureza",
+    "purity rules": "normas de pureza",
+    "purity codes": "códigos de pureza",
+    "clean and unclean": "puro e impuro",
+    "the body politic": "el cuerpo político",
+
+    # ── Reino, escatología, sabiduría ──
+    "the Kingdom of God": "el Reino de Dios",
+    "Kingdom of God": "Reino de Dios",
+    "the Kingdom of Heaven": "el Reino de los Cielos",
+    "Kingdom of Heaven": "Reino de los Cielos",
+    "the kingdom": "el Reino",
+    "apocalyptic": "apocalíptico",
+    "apocalypticism": "apocalipticismo",
+    "apocalyptic eschatology": "escatología apocalíptica",
+    "eschatology": "escatología",
+    "eschatological": "escatológico",
+    "sapiential": "sapiencial",
+    "the Son of Man": "el Hijo del hombre",
+    "Son of Man": "Hijo del hombre",
+    "the Son of God": "el Hijo de Dios",
+    "Son of God": "Hijo de Dios",
+    "the Beatitudes": "las Bienaventuranzas",
+    "Blessed are": "Bienaventurados",
+
+    # ── Crítica bíblica y fuentes ──
+    "the Sayings Gospel Q": "el Evangelio Q de los dichos",
+    "the Q Gospel": "el Evangelio Q",
+    "the Synoptic Gospels": "los Evangelios sinópticos",
+    "the Synoptics": "los sinópticos",
+    "the Gospel of Thomas": "el Evangelio de Tomás",
+    "the canonical Gospels": "los Evangelios canónicos",
+    "the Gospels": "los Evangelios",
+    "the Gospel": "el Evangelio",
+    "the good news": "la Buena Nueva",
+    "parable": "parábola",
+    "aphorism": "aforismo",
+    "redaction": "redacción",
+    "tradition": "tradición",
+    "Second Temple Judaism": "el judaísmo del Segundo Templo",
+    "covenant": "alianza",
+
+    # ── Grupos y oficios ──
+    "the Pharisees": "los fariseos",
+    "the Sadducees": "los saduceos",
+    "the Essenes": "los esenios",
+    "the Zealots": "los zelotas",
+    "the scribes": "los escribas",
+    "the Sanhedrin": "el Sanedrín",
+    "Gentiles": "gentiles",
+    "the Gentiles": "los gentiles",
+    "the Twelve": "los Doce",
+    "disciple": "discípulo",
+    "discipleship": "discipulado",
+    "apostle": "apóstol",
+    "the kingdom of the nobodies": "el reino de los don nadie",
+
+    # ── Pasión, muerte, resurrección ──
+    "the Passion": "la Pasión",
+    "the Last Supper": "la Última Cena",
+    "Passover": "la Pascua",
+    "the empty tomb": "el sepulcro vacío",
+    "crucifixion": "crucifixión",
+    "to crucify": "crucificar",
+    "resurrection": "resurrección",
+    "Easter": "Pascua de Resurrección",
+    "Easter Sunday": "Domingo de Pascua",
+    "the Eucharist": "la Eucaristía",
+    "first fruits": "primicias",
+
+    # ── Nombres propios (anclados a la Biblia de Jerusalén) ──
+    "John the Baptist": "Juan el Bautista",
+    "the Baptist": "el Bautista",
+    "Pontius Pilate": "Poncio Pilato",
+    "Pilate": "Pilato",
+    "Herod Antipas": "Herodes Antipas",
+    "Herod the Great": "Herodes el Grande",
+    "Caiaphas": "Caifás",
+    "Barabbas": "Barrabás",
+    "James the Just": "Santiago el Justo",
+    "Joseph of Arimathea": "José de Arimatea",
+    "Mary Magdalene": "María Magdalena",
+    "the Holy Spirit": "el Espíritu Santo",
+
+    # ── Topónimos (Biblia de Jerusalén) ──
+    "Galilee": "Galilea",
+    "Galilean": "galileo",
+    "Judea": "Judea",
+    "Judaea": "Judea",
+    "Nazareth": "Nazaret",
+    "Capernaum": "Cafarnaún",
+    "Bethlehem": "Belén",
+    "Jerusalem": "Jerusalén",
+    "the Jordan": "el Jordán",
+    "Sepphoris": "Séforis",
+    "Machaerus": "Maqueronte",
+    "Golgotha": "Gólgota",
+
+    # ── Historiadores antiguos (se españolizan) ──
+    "Josephus": "Flavio Josefo",
+    "Philo": "Filón",
+    "Tacitus": "Tácito",
+    "Suetonius": "Suetonio",
+    "Augustus": "Augusto",
+    "Tiberius": "Tiberio",
+    "the emperor": "el emperador",
+}
+
+SYSTEM_PROMPT_CROSSAN = """Eres un traductor de erudición bíblica y de estudios sobre el Jesús histórico del más alto nivel. Traduces del inglés al español latinoamericano neutro para un lector peruano culto, creyente o no, interesado en historia, exégesis y religión.
+
+Este libro es "Jesus: A Revolutionary Biography" de John Dominic Crossan (HarperOne, 1994), título canónico en español "Jesús: una biografía revolucionaria" (Grijalbo). Crossan, codirector del Jesus Seminar, reconstruye con método histórico-crítico al Jesús histórico: un campesino judío del ámbito mediterráneo cuyo programa fue el "igualitarismo radical" y la "comensalidad abierta" —comer y curar sin fronteras—, en tensión con el honor/vergüenza y las normas de pureza de su mundo. La prosa es ACADÉMICA, precisa, con ironía contenida, citas bíblicas constantes, términos en griego/latín/hebreo y notas al pie eruditas. Conserva ese rigor: no lo vulgarices ni lo devocionalices.
+
+ANCLAJE BÍBLICO — esto define la calidad del trabajo:
+- Toda cita o eco de la Escritura se vierte según la BIBLIA DE JERUSALÉN (estándar académico católico en español). Sigue su léxico: "Reino de Dios", "Hijo del hombre", "Buena Nueva", "alianza" (no "pacto"), "Bienaventurados", "gentiles", "zelotas", "sepulcro" (no "tumba" en contexto pascual), "Cafarnaún", "Nazaret".
+- Cuando Crossan cita un versículo, traduce ese versículo con la dicción sobria de la Biblia de Jerusalén, NO con una paráfrasis libre. Si Crossan comenta una palabra concreta del texto griego, respeta que su comentario siga teniendo sentido sobre la versión española.
+- "Kingdom of God" → "Reino de Dios" SIEMPRE; "Kingdom of Heaven" (propio de Mateo) → "Reino de los Cielos". No los confundas.
+
+REGLAS ABSOLUTAS — no las rompas nunca:
+
+1. TOKENS OPACOS ⟦OPAQUE_N⟧:
+   - Los tokens ⟦OPAQUE_1⟧, ⟦OPAQUE_2⟧, etc. son placeholders protegidos. NO los traduzcas, NO los modifiques, NO los elimines, NO los reordenes. Preserva su posición EXACTA.
+
+2. PRESERVA TODOS los tags HTML EXACTAMENTE: <em>, <strong>, <i>, <b>, <a href>, <span>, <sup>, <br/>, <cite>, <q>, etc. Mismos atributos (href, id, class, data-*, epub:type, lang, xml:lang), mismas cantidades, mismo orden. Las llamadas de nota al pie <sup><a href="...">N</a></sup> se preservan EXACTAS. Un <span epub:type="pagebreak" .../> a media oración queda EXACTAMENTE donde está.
+
+3. TERMINOLOGÍA DE CROSSAN — tradúcela SIEMPRE de forma estable (son su tesis, no adorno):
+   - "the historical Jesus" → "el Jesús histórico".
+   - "open commensality" → "comensalidad abierta"; "commensality" → "comensalidad".
+   - "radical egalitarianism" → "igualitarismo radical".
+   - "a Mediterranean Jewish peasant" → "un campesino judío mediterráneo"; "peasant" → "campesino".
+   - "brokerless kingdom" → "reino sin intermediarios"; "broker" → "intermediario"; "patronage" → "patronazgo".
+   - "honor and shame" → "honor y vergüenza"; "purity" → "pureza".
+   - "the Son of Man" → "el Hijo del hombre" (minúscula en "hombre", como la Biblia de Jerusalén).
+
+4. IDIOMAS CLÁSICOS:
+   - Palabras y frases en griego, latín, hebreo o arameo: NO se traducen; se conservan en su grafía original (incluida la transliteración del autor) y sus tags. Si Crossan ofrece a continuación su glosa en inglés, ESA glosa sí se traduce.
+   - Términos técnicos que Crossan deja en cursiva (p. ej. nombres de fuentes, conceptos): respeta la cursiva.
+
+5. NOMBRES PROPIOS:
+   - Personajes y lugares bíblicos: forma de la Biblia de Jerusalén (Poncio Pilato, Caifás, Barrabás, Santiago el Justo, José de Arimatea, Juan el Bautista, Nazaret, Cafarnaún, Belén, Jerusalén, Galilea, Judea, el Jordán, Maqueronte, Séforis).
+   - Autores antiguos se españolizan (Flavio Josefo, Filón, Tácito, Suetonio, Augusto, Tiberio).
+   - Eruditos modernos y contemporáneos NUNCA se traducen (Crossan, Bultmann, Schweitzer, Sanders, Vermes, Theissen, Mack, Koester, Meier, Borg, Funk, Schüssler Fiorenza).
+   - Evangelistas como autores de su libro: Marcos, Mateo, Lucas, Juan; apóstoles: Pedro, Pablo, Santiago, Tomás.
+
+6. CITAS BÍBLICAS Y SIGLAS:
+   - Referencias tipo "Mark 6:3", "1 Cor 15:3-8" → "Mc 6,3", "1 Co 15,3-8" usando las siglas y la puntuación con coma de la Biblia de Jerusalén (Mt, Mc, Lc, Jn, Hch, Rm, 1 Co, Ga, etc.). Si la referencia aparece dentro de un tag o token opaco, no la toques.
+   - Nombres de libros bíblicos en texto corrido → su forma española (Mark → Marcos, the Gospel of Mark → el Evangelio de Marcos, Genesis → Génesis, Isaiah → Isaías, Psalms → Salmos).
+
+7. TÍTULOS DE CAPÍTULO Y SECCIÓN: tradúcelos de forma fiel y evocadora, conservando su fuerza literaria. Cuando un título es una cita bíblica ("Is Not This the Carpenter?" → "¿No es éste el carpintero?"; "First Fruits of Them That Sleep" → "Primicias de los que durmieron"), vierte la dicción de la Biblia de Jerusalén. "Open Commensality" → "La comensalidad abierta"; "Radical Egalitarianism" → "El igualitarismo radical".
+
+8. NOTAS AL PIE (archivos Footnote): tradúcelas con el mismo rigor. PERO los datos bibliográficos —títulos de libros y artículos, nombres de editoriales, revistas, ciudades de edición, "pp.", "ed.", "trans."— se conservan en su idioma original; solo se traduce la prosa explicativa del autor.
+
+9. TÍTULOS DE OBRAS MODERNAS (libros, revistas, artículos citados): se mantienen en su idioma original; si van en <i>/<em>, conserva los tags. (Excepción: los títulos de los capítulos de ESTE libro, que sí se traducen.)
+
+10. ESPAÑOL LATAM NEUTRO, lector peruano culto:
+   - "tú" si hay segunda persona (Crossan rara vez interpela; predomina el impersonal y la primera del plural).
+   - Sin modismos regionales (NADA de "chévere", "bacán", "guay", "chido").
+   - Sin conjugaciones peninsulares ("vosotros tenéis", "habríais") en la prosa del autor. (En una cita bíblica literal de la Biblia de Jerusalén se admite su dicción original si el sentido lo pide, pero por defecto neutraliza a "ustedes".)
+   - Registro: ensayístico académico, culto, claro pero exigente. Conserva la ironía fina de Crossan; no la exageres ni la borres.
+
+11. NÚMEROS, FECHAS, ERAS Y SIGLOS:
+    - "B.C.E." → "a.e.c." y "C.E." → "e.c." (era común; Crossan los usa deliberadamente en vez de a.C./d.C.). Mantén esa convención.
+    - Fechas: "30 C.E." → "30 e.c."; "March 14" → "14 de marzo".
+    - Siglos: "the first century" → "el siglo I" (números romanos).
+
+12. NO expliques, NO resumas, NO agregues notas del traductor. NO suavices ni devocionalices las tesis históricas de Crossan: respétalas tal cual.
+
+13. FORMATO DE RESPUESTA — obligatorio:
+    <<<BLOCK 0>>>
+    <html traducido del bloque 0>
+    <<<BLOCK 1>>>
+    <html traducido del bloque 1>
+    <<<END>>>
+
+    Sin JSON, sin backticks, sin markdown, sin texto antes/después.
+"""
+
+# Solo se traduce B1 ("Jesus"). Se saltan los otros tres libros del set,
+# el material compartido del conjunto y el aparato no-narrativo de B1.
+SKIP_PATTERNS_CROSSAN = [
+    r"_B2_",                                  # libro 2: The Birth of Christianity
+    r"_B3_",                                  # libro 3: The Power of Parable
+    r"_B4_",                                  # libro 4: The Greatest Prayer
+    r"^9780062358097_Contents\.xhtml$",       # índice del SET (no de B1)
+    r"^9780062358097_Cover\.xhtml$",          # portada del set (solo imagen)
+    r"^9780062358097_Title_Page\.xhtml$",     # portadilla del set
+    r"^About_the_Authour\.xhtml$",            # bio del set (back matter)
+    r"^About_the_Publisher\.xhtml$",          # editorial (back matter)
+    r"_B1_Cover\.xhtml$",                     # portada de B1 (solo imagen)
+    r"_B1_Copyright\.xhtml$",                 # créditos/copyright de B1
+    r"_B1_Title_Page\.xhtml$",                # portadilla de B1
+    r"_B1_Index\.xhtml$",                     # índice analítico (páginas impresas)
+]
+
 PROFILES = {
     "generic": {
         "glossary": GLOSSARY_GENERIC,
@@ -3842,6 +4073,11 @@ PROFILES = {
         "system_prompt": SYSTEM_PROMPT_DEWEY,
         "skip_patterns": SKIP_PATTERNS_DEWEY,
     },
+    "crossan_jesus": {
+        "glossary": GLOSSARY_CROSSAN,
+        "system_prompt": SYSTEM_PROMPT_CROSSAN,
+        "skip_patterns": SKIP_PATTERNS_CROSSAN,
+    },
 }
 
 # ─── Detección de fuente y perfil ───────────────────────────────────────────
@@ -3881,12 +4117,15 @@ def detect_book_profile(epub_path: Path) -> str:
     postgres_hits = 0      # Practical SQL: PostgreSQL/pgAdmin densidad alta
     sql_keyword_hits = 0   # SELECT/FROM/JOIN/WHERE en <code> y <pre>
     life3d_hits = 0        # Life in Three Dimensions (Oishi, Knopf/PRH, 2025): ISBN único 9780385550406
+    crossan_hits = 0       # Crossan Essential Set: ISBN único del set 9780062358097 (solo B1)
     dewey_hits = 0         # Art as Experience (Dewey): grafía arcaica "esthetic" (sin "a")
     dewey_marker = False   # frases únicas de los títulos de capítulo de Dewey
     with zipfile.ZipFile(epub_path) as zf:
         for name in zf.namelist():
             if "9780385550406" in name or "Oish_9780385550406" in name:
                 life3d_hits += 1
+            if "9780062358097" in name:
+                crossan_hits += 1
             if not name.endswith((".xhtml", ".html", ".htm")):
                 continue
             try:
@@ -3909,6 +4148,9 @@ def detect_book_profile(epub_path: Path) -> str:
             dewey_hits += content.count("esthetic") - content.count("aesthetic")
             if "The Live Creature" in content or "Having an Experience" in content:
                 dewey_marker = True
+    # Crossan Essential Set — match exacto por ISBN del set en los nombres de archivo (solo B1)
+    if crossan_hits >= 3:
+        return "crossan_jesus"
     # Art as Experience (Dewey) — grafía arcaica "esthetic" en altísima densidad + título único
     if dewey_hits >= 40 and dewey_marker:
         return "dewey_art_experience"
@@ -4302,16 +4544,23 @@ async def translate_xhtml_file(
         save_progress(progress)
         return
 
-    context_tail = ""
+    # Traducir TODOS los batches del archivo EN PARALELO (cada uno toma un cupo
+    # del semáforo global). Sin context_tail: cada bloque es HTML autónomo y la
+    # consistencia terminológica la garantiza el glosario, así que un capítulo
+    # grande satura la concurrencia en vez de arrastrar sus batches en fila india.
+    batches = [blocks[i:i + BATCH_SIZE] for i in range(0, len(blocks), BATCH_SIZE)]
     any_batch_failed = False
-    for i in range(0, len(blocks), BATCH_SIZE):
-        batch = blocks[i:i + BATCH_SIZE]
-        htmls = [b[1] for b in batch]
 
-        try:
-            translations = await translate_batch(htmls, context_tail, sem, profile)
-        except Exception as e:
-            print(f"  [!] Error batch {i}-{i+len(batch)} en {path.name}: {e}")
+    async def _run_batch(batch: list) -> list[str]:
+        return await translate_batch([b[1] for b in batch], "", sem, profile)
+
+    results = await asyncio.gather(
+        *(_run_batch(b) for b in batches), return_exceptions=True
+    )
+
+    for batch, translations in zip(batches, results):
+        if isinstance(translations, Exception):
+            print(f"  [!] Error batch en {path.name}: {translations}")
             any_batch_failed = True
             if pbar is not None:
                 pbar.update(1)
@@ -4344,9 +4593,6 @@ async def translate_xhtml_file(
                 except Exception as e:
                     print(f"  [!] Retry falló en {path.name}: {e}")
                     any_batch_failed = True
-
-        tail_items = translations[-3:]
-        context_tail = "\n".join(tail_items)[-1500:]
 
         if pbar is not None:
             pbar.update(1)
